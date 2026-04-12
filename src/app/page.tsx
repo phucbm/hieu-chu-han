@@ -3,18 +3,17 @@
 /**
  * page.tsx — Trang chủ Hiểu Chữ Hán
  *
- * UX flow:
- *   User types → auto-suggest dropdown (debounced 300ms)
- *   Enter / Search button → results list (up to 20)
- *   Click result → CharCard / TabView rendered
- *   Related word click → same flow as clicking a result
- *   Input empty + focused → history dropdown
- *   History item click → CharCard directly (skip results list)
+ * Layout:
+ *   Desktop (≥1024px): Fixed sidebar (AppSidebar) + scrollable main content
+ *   Mobile (<1024px):  Sticky header (AppHeader) + sticky search area + scrollable main
  *
- * Responsive layout:
- *   Mobile (< 768px):    single column
- *   Tablet (768–1023px): single column, centered, wider
- *   Desktop (≥ 1024px):  two columns — left: search+results, right: card
+ * All word navigation flows through openWord(simp):
+ *   suggestion click → openWord
+ *   recent search badge → setQuery + openWord
+ *   etymology component → openWord
+ *   related word → openWord
+ *   viewed word badge → openWord
+ *   ?word= URL param (on mount) → openWord
  */
 
 import {
@@ -24,13 +23,17 @@ import {
   useRef,
   useEffect,
 } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { SearchResults } from "@/components/SearchResults";
-import { ResultView } from "@/components/ResultView";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { HistoryBottomSheet } from "@/components/layout/HistoryBottomSheet";
+import { SearchInput } from "@/components/search/SearchInput";
+import { SuggestionBox } from "@/components/search/SuggestionBox";
+import { RecentSearch } from "@/components/search/RecentSearch";
+import { WordTabs } from "@/components/word/WordTabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { suggestWords, searchWords, getWordEntries } from "@/app/actions";
-import { useSearchHistory } from "@/hooks/useSearchHistory";
-import type { WordEntry, WordSummary, HistoryItem } from "@/core/types";
+import { suggestWords, getWordEntries } from "@/app/actions";
+import { useViewedWords } from "@/hooks/useViewedWords";
+import type { WordEntry, WordSummary } from "@/core/types";
 
 // ── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -42,263 +45,191 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-// ── Page component ────────────────────────────────────────────────────────────
+// ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Search state
+  // Search input state
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
 
-  // Dropdown visibility
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-
-  // Auto-suggest items (populated via server action)
+  // Auto-suggest dropdown
   const [suggestions, setSuggestions] = useState<WordSummary[]>([]);
+  // Track focus so suggestions only appear while input is active
+  const [inputFocused, setInputFocused] = useState(false);
+  const showSuggestions = inputFocused && suggestions.length > 0;
 
-  // Results list (shown after Enter/Search)
-  const [results, setResults] = useState<WordSummary[] | null>(null);
-
-  // Full entry for CharCard display
+  // Selected word detail
   const [selectedEntries, setSelectedEntries] = useState<WordEntry[]>([]);
+
+  // Mobile history sheet
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Loading states
   const [isSuggestPending, startSuggestTransition] = useTransition();
-  const [isSearchPending, startSearchTransition] = useTransition();
   const [isDetailPending, startDetailTransition] = useTransition();
 
-  const isLoading = isSuggestPending || isSearchPending || isDetailPending;
+  // Viewed words history
+  const { viewedWords, addViewedWord } = useViewedWords();
 
-  // History
-  const { history, addToHistory, clearHistory } = useSearchHistory();
-
-  // ── Auto-suggest: fire when debounced query changes ─────────────────────────
+  // ── Auto-suggest: fires 300ms after the user stops typing ─────────────────
   useEffect(() => {
     if (!debouncedQuery.trim()) {
       setSuggestions([]);
-      setShowSuggestions(false);
       return;
     }
     startSuggestTransition(async () => {
       const items = await suggestWords(debouncedQuery);
       setSuggestions(items);
-      setShowSuggestions(items.length > 0);
-      setShowHistory(false);
     });
   }, [debouncedQuery]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  /** Called when user changes the input text */
-  const handleQueryChange = useCallback((value: string) => {
-    setQuery(value);
-    if (!value.trim()) {
-      // Clear suggestions; history shown on focus
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, []);
-
-  /** Called when input is focused — show history if empty */
-  const handleInputFocus = useCallback(() => {
-    if (!query.trim()) {
-      setShowHistory(true);
-      setShowSuggestions(false);
-    }
-  }, [query]);
-
-  /** Close all dropdowns */
-  const handleDismiss = useCallback(() => {
-    setShowSuggestions(false);
-    setShowHistory(false);
-  }, []);
-
-  /** Enter / Search button: fetch results list */
-  const handleSearch = useCallback(() => {
-    if (!query.trim()) return;
-    handleDismiss();
-    setSelectedEntries([]);
-    startSearchTransition(async () => {
-      const items = await searchWords(query);
-      setResults(items);
-    });
-  }, [query, handleDismiss]);
-
-  /**
-   * User selected a suggestion from dropdown — fetch full entry directly,
-   * bypass results list (same UX as clicking a result item).
-   */
-  const handleSuggestionSelect = useCallback((summary: WordSummary) => {
-    setQuery(summary.simp);
-    setResults(null);
-    addToHistory({
-      simp: summary.simp,
-      trad: summary.trad,
-      pinyin: summary.pinyin,
-      vi: summary.vi,
-    });
-    startDetailTransition(async () => {
-      const entries = await getWordEntries(summary.simp);
-      setSelectedEntries(entries);
-    });
-  }, [addToHistory]);
-
-  /**
-   * User clicked a result item in the results list — fetch full entry.
-   */
-  const handleResultSelect = useCallback((summary: WordSummary) => {
-    setResults(null);
-    setQuery(summary.simp);
-    addToHistory({
-      simp: summary.simp,
-      trad: summary.trad,
-      pinyin: summary.pinyin,
-      vi: summary.vi,
-    });
-    startDetailTransition(async () => {
-      const entries = await getWordEntries(summary.simp);
-      setSelectedEntries(entries);
-    });
-  }, [addToHistory]);
-
-  /**
-   * User clicked a history item — fetch full entry directly, skip results list.
-   */
-  const handleHistorySelect = useCallback((item: HistoryItem) => {
-    setQuery(item.simp);
-    setResults(null);
-    addToHistory({
-      simp: item.simp,
-      trad: item.trad,
-      pinyin: item.pinyin,
-      vi: item.vi,
-    });
-    startDetailTransition(async () => {
-      const entries = await getWordEntries(item.simp);
-      setSelectedEntries(entries);
-    });
-  }, [addToHistory]);
-
-  /**
-   * Related word chip clicked inside CharCard — treat as new search.
-   */
-  const handleRelatedWordClick = useCallback((word: string) => {
-    setQuery(word);
-    setResults(null);
-    startDetailTransition(async () => {
-      const entries = await getWordEntries(word);
-      setSelectedEntries(entries);
-      // Add to history if we got a result
-      if (entries[0]) {
-        addToHistory({
-          simp: entries[0].simp,
-          trad: entries[0].trad,
-          pinyin: entries[0].pinyin,
-          vi: entries[0].definitionVi,
-        });
-      }
-    });
-  }, [addToHistory]);
-
-  // ── Shared left-column content ─────────────────────────────────────────────
-  const leftContent = (
-    <>
-      {/* App header */}
-      <header className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">
-          Hiểu Chữ Hán
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Tra cứu chữ Hán · Hán Việt · Nét chữ · Tự nguyên
-        </p>
-      </header>
-
-      {/* Search bar with suggestion/history dropdown */}
-      <div
-        className="w-full max-w-[600px]"
-        onFocus={handleInputFocus}
-      >
-        <SearchBar
-          ref={inputRef}
-          value={query}
-          onChange={handleQueryChange}
-          onSearch={handleSearch}
-          onSuggestionSelect={handleSuggestionSelect}
-          suggestions={suggestions}
-          showSuggestions={showSuggestions && !showHistory}
-          onDismiss={handleDismiss}
-          history={history}
-          showHistory={showHistory}
-          onHistorySelect={handleHistorySelect}
-          onClearHistory={clearHistory}
-          loading={isSuggestPending}
-        />
-      </div>
-
-      {/* Results list (after search, before card selection) */}
-      {isSearchPending && (
-        <div className="w-full max-w-[600px] flex flex-col gap-2">
-          <Skeleton className="h-14 w-full rounded-lg" />
-          <Skeleton className="h-14 w-full rounded-lg" />
-          <Skeleton className="h-14 w-full rounded-lg" />
-        </div>
-      )}
-      {!isSearchPending && results !== null && (
-        <div className="w-full max-w-[600px]">
-          <SearchResults results={results} onSelect={handleResultSelect} />
-        </div>
-      )}
-    </>
+  // ── openWord — single shared handler for all word navigation ─────────────
+  const openWord = useCallback(
+    (simp: string) => {
+      if (!simp.trim()) return;
+      setQuery(simp);
+      setInputFocused(false);
+      startDetailTransition(async () => {
+        const entries = await getWordEntries(simp);
+        setSelectedEntries(entries);
+        if (entries[0]) {
+          addViewedWord({
+            simp: entries[0].simp,
+            trad: entries[0].trad,
+            pinyin: entries[0].pinyin,
+            sinoViet: entries[0].sinoVietnamese || undefined,
+          });
+          // Update URL without triggering a navigation
+          window.history.replaceState(
+            null,
+            "",
+            `?word=${encodeURIComponent(entries[0].simp)}`
+          );
+        }
+      });
+    },
+    [addViewedWord]
   );
 
-  // CharCard / TabView section
+  // Keep a stable ref so the mount effect can call the latest openWord
+  const openWordRef = useRef(openWord);
+  openWordRef.current = openWord;
+
+  // ── Handle ?word= URL param on first mount ───────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const word = params.get("word");
+    if (word) openWordRef.current(word);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const dismissSuggestions = useCallback(() => {
+    setInputFocused(false);
+  }, []);
+
+  /**
+   * Recent search / viewed badge: fills input AND opens the word.
+   */
+  const handleWordSelect = useCallback(
+    (simp: string) => {
+      setQuery(simp);
+      openWord(simp);
+    },
+    [openWord]
+  );
+
+  // ── Detail content ───────────────────────────────────────────────────────
   const detailContent = isDetailPending ? (
-    <div className="w-full flex flex-col gap-4">
-      <Skeleton className="h-40 w-full rounded-xl" />
+    <div className="flex flex-col gap-4 py-4">
+      <Skeleton className="h-36 w-full rounded-xl" />
       <Skeleton className="h-52 w-full rounded-xl" />
     </div>
   ) : selectedEntries.length > 0 ? (
-    <ResultView
-      entries={selectedEntries}
-      onRelatedWordClick={handleRelatedWordClick}
-    />
+    <WordTabs entries={selectedEntries} onWordClick={openWord} />
   ) : null;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    // Desktop: flex-row two-column; Mobile/Tablet: flex-col single column
-    <div className="flex flex-col lg:flex-row flex-1 min-h-screen">
-      {/* ── Left column: header + search + results ──────────────────────── */}
-      <div className="flex flex-col items-center gap-6 px-4 py-8
-                      lg:w-[420px] lg:shrink-0 lg:border-r lg:overflow-y-auto
-                      lg:sticky lg:top-0 lg:h-screen">
-        {leftContent}
+    <div className="min-h-screen bg-background">
+      {/* ── Desktop sidebar (hidden on mobile) ───────────────────────────── */}
+      <AppSidebar
+        query={query}
+        onQueryChange={setQuery}
+        suggestions={suggestions}
+        showSuggestions={showSuggestions}
+        onSuggestionSelect={openWord}
+        onInputFocus={() => setInputFocused(true)}
+        onDismissSuggestions={dismissSuggestions}
+        isLoadingSuggestions={isSuggestPending}
+        recentSearches={viewedWords.slice(0, 5)}
+        onRecentSearchSelect={handleWordSelect}
+        viewedWords={viewedWords}
+        onViewedWordSelect={openWord}
+      />
 
-        {/* On mobile/tablet: card renders here (below results) */}
-        {detailContent && (
-          <div className="w-full max-w-[680px] lg:hidden">
-            {detailContent}
+      {/* ── Mobile: sticky header + search area (hidden on desktop) ──────── */}
+      <div className="lg:hidden">
+        <AppHeader onOpenHistory={() => setHistoryOpen(true)} />
+
+        {/* Row 2: sticky below header */}
+        <div className="sticky top-14 z-20 bg-background border-b px-4 py-3">
+          {/* Relative container for SuggestionBox positioning */}
+          <div
+            className="relative"
+            onFocus={() => setInputFocused(true)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                dismissSuggestions();
+              }
+            }}
+          >
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              isLoading={isSuggestPending}
+              onEscape={dismissSuggestions}
+            />
+            <SuggestionBox
+              visible={showSuggestions}
+              suggestions={suggestions}
+              onSelect={(simp) => {
+                dismissSuggestions();
+                openWord(simp);
+              }}
+            />
           </div>
-        )}
+          <RecentSearch
+            words={viewedWords.slice(0, 5)}
+            onSelect={handleWordSelect}
+          />
+        </div>
       </div>
 
-      {/* ── Right column: CharCard / TabView (desktop only) ─────────────── */}
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-start
-                      px-6 py-8 overflow-y-auto">
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      {/* Desktop: offset by sidebar width + independently scrollable */}
+      {/* Mobile: normal document flow */}
+      <main className="lg:pl-80 lg:h-screen lg:overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
         {detailContent ? (
-          <div className="w-full max-w-[640px]">
-            {detailContent}
-          </div>
+          <div className="max-w-3xl mx-auto">{detailContent}</div>
         ) : (
-          /* Placeholder when no card is selected */
-          <div className="flex flex-col items-center justify-center flex-1
-                          text-center text-muted-foreground gap-2">
-            <span className="font-chinese text-5xl opacity-20">漢</span>
-            <p className="text-sm">Chọn một từ để xem chi tiết</p>
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center text-muted-foreground gap-3">
+            <span className="font-chinese text-7xl opacity-15 select-none">
+              漢
+            </span>
+            <p className="text-sm">Nhập chữ Hán để tra cứu</p>
           </div>
         )}
-      </div>
+      </main>
+
+      {/* ── Mobile history bottom sheet ───────────────────────────────────── */}
+      <HistoryBottomSheet
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        viewedWords={viewedWords}
+        onSelect={(simp) => {
+          setHistoryOpen(false);
+          openWord(simp);
+        }}
+      />
     </div>
   );
 }

@@ -54,7 +54,14 @@ export async function getWordEntries(input: string): Promise<WordEntry[]> {
 
   if (isCompound(trimmed)) {
     // segmentWord returns [fullWord, char1, char2, ...]
-    const segments = segmentWord(trimmed);
+    // Deduplicate while preserving order (e.g. 一生一世 → [一生一世, 一, 生, 世])
+    const rawSegments = segmentWord(trimmed);
+    const seen = new Set<string>();
+    const segments = rawSegments.filter((seg) => {
+      if (seen.has(seg)) return false;
+      seen.add(seg);
+      return true;
+    });
     return segments
       .map((seg): WordEntry | null => {
         const detail = getWordDetail(seg);
