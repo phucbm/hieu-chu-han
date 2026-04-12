@@ -74,6 +74,18 @@ export function useViewedWords() {
     []
   );
 
+  const removeViewedWord = useCallback((simp: string) => {
+    setViewedWords((prev) => {
+      const next = prev.filter((w) => w.simp !== simp);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  }, []);
+
   const clearViewedWords = useCallback(() => {
     setViewedWords([]);
     try {
@@ -83,5 +95,5 @@ export function useViewedWords() {
     }
   }, []);
 
-  return { viewedWords, addViewedWord, clearViewedWords };
+  return { viewedWords, addViewedWord, removeViewedWord, clearViewedWords };
 }

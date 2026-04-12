@@ -3,17 +3,22 @@
 /**
  * page.tsx — Trang chủ Hiểu Chữ Hán
  *
- * Layout:
- *   Desktop (≥1024px): Fixed sidebar (AppSidebar) + scrollable main content
- *   Mobile (<1024px):  Sticky header (AppHeader) + sticky search area + scrollable main
+ * Desktop layout (≥1024px): 3 columns
+ *   Col 1 (fixed left,  w-80):  AppSidebar — logo + search + recent searches
+ *   Col 2 (flex-1, pl-80 pr-72): main content — word detail
+ *   Col 3 (fixed right, w-72):  RecentViewedPanel — full view history
+ *
+ * Mobile layout (<1024px): stacked
+ *   Row 1 sticky: AppHeader
+ *   Row 2 sticky: SearchInput + RecentSearch + SuggestionBox overlay
+ *   Row 3 scroll: word detail
+ *   HistoryBottomSheet: overlay for viewed words
  *
  * All word navigation flows through openWord(simp):
- *   suggestion click → openWord
- *   recent search badge → setQuery + openWord
- *   etymology component → openWord
- *   related word → openWord
- *   viewed word badge → openWord
- *   ?word= URL param (on mount) → openWord
+ *   suggestion click, related word, etymology component,
+ *   viewed word, ?word= URL param on mount
+ *
+ * Recent search badge click appends to current input (does not replace).
  */
 
 import {
@@ -26,6 +31,7 @@ import {
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { HistoryBottomSheet } from "@/components/layout/HistoryBottomSheet";
+import { RecentViewedPanel } from "@/components/layout/RecentViewedPanel";
 import { SearchInput } from "@/components/search/SearchInput";
 import { SuggestionBox } from "@/components/search/SuggestionBox";
 import { RecentSearch } from "@/components/search/RecentSearch";
@@ -53,7 +59,7 @@ export default function HomePage() {
 
   // Auto-suggest dropdown
   const [suggestions, setSuggestions] = useState<WordSummary[]>([]);
-  // Track focus so suggestions only appear while input is active
+  // Suggestions only visible while input has focus
   const [inputFocused, setInputFocused] = useState(false);
   const showSuggestions = inputFocused && suggestions.length > 0;
 
@@ -68,7 +74,7 @@ export default function HomePage() {
   const [isDetailPending, startDetailTransition] = useTransition();
 
   // Viewed words history
-  const { viewedWords, addViewedWord } = useViewedWords();
+  const { viewedWords, addViewedWord, removeViewedWord } = useViewedWords();
 
   // ── Auto-suggest: fires 300ms after the user stops typing ─────────────────
   useEffect(() => {
@@ -127,15 +133,13 @@ export default function HomePage() {
   }, []);
 
   /**
-   * Recent search / viewed badge: fills input AND opens the word.
+   * Recent search badge: appends simp to the current input value.
+   * Does NOT replace — lets users compose compound queries.
+   * The debounce will then fetch suggestions for the combined string.
    */
-  const handleWordSelect = useCallback(
-    (simp: string) => {
-      setQuery(simp);
-      openWord(simp);
-    },
-    [openWord]
-  );
+  const handleRecentSearchAppend = useCallback((simp: string) => {
+    setQuery((prev) => prev + simp);
+  }, []);
 
   // ── Detail content ───────────────────────────────────────────────────────
   const detailContent = isDetailPending ? (
@@ -150,7 +154,7 @@ export default function HomePage() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Desktop sidebar (hidden on mobile) ───────────────────────────── */}
+      {/* ── Col 1: Desktop left sidebar ───────────────────────────────────── */}
       <AppSidebar
         query={query}
         onQueryChange={setQuery}
@@ -161,9 +165,14 @@ export default function HomePage() {
         onDismissSuggestions={dismissSuggestions}
         isLoadingSuggestions={isSuggestPending}
         recentSearches={viewedWords.slice(0, 5)}
-        onRecentSearchSelect={handleWordSelect}
+        onRecentSearchSelect={handleRecentSearchAppend}
+      />
+
+      {/* ── Col 3: Desktop right viewed-words panel ───────────────────────── */}
+      <RecentViewedPanel
         viewedWords={viewedWords}
-        onViewedWordSelect={openWord}
+        onSelect={openWord}
+        onRemove={removeViewedWord}
       />
 
       {/* ── Mobile: sticky header + search area (hidden on desktop) ──────── */}
@@ -199,15 +208,15 @@ export default function HomePage() {
           </div>
           <RecentSearch
             words={viewedWords.slice(0, 5)}
-            onSelect={handleWordSelect}
+            onSelect={handleRecentSearchAppend}
           />
         </div>
       </div>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      {/* Desktop: offset by sidebar width + independently scrollable */}
+      {/* ── Col 2: Main content ───────────────────────────────────────────── */}
+      {/* Desktop: inset between sidebar (pl-80) and right panel (pr-72) */}
       {/* Mobile: normal document flow */}
-      <main className="lg:pl-80 lg:h-screen lg:overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
+      <main className="lg:pl-80 lg:pr-72 lg:h-screen lg:overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
         {detailContent ? (
           <div className="max-w-3xl mx-auto">{detailContent}</div>
         ) : (

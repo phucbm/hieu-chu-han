@@ -3,12 +3,12 @@
 /**
  * AppSidebar — Fixed left sidebar for desktop (≥1024px).
  * Contains AppLogo, SearchInput with floating SuggestionBox,
- * always-visible RecentSearch, and RecentViewedSidebar at the bottom.
+ * and always-visible RecentSearch below the input.
+ * Recently viewed words are shown in RecentViewedPanel (right column).
  */
 
 import { useRef } from "react";
 import { AppLogo } from "@/components/layout/AppLogo";
-import { RecentViewedSidebar } from "@/components/layout/RecentViewedSidebar";
 import { SearchInput } from "@/components/search/SearchInput";
 import { SuggestionBox } from "@/components/search/SuggestionBox";
 import { RecentSearch } from "@/components/search/RecentSearch";
@@ -25,9 +25,8 @@ interface AppSidebarProps {
   onDismissSuggestions: () => void;
   isLoadingSuggestions: boolean;
   recentSearches: ViewedWord[];
+  /** Appends simp to the current input value */
   onRecentSearchSelect: (simp: string) => void;
-  viewedWords: ViewedWord[];
-  onViewedWordSelect: (simp: string) => void;
 }
 
 export function AppSidebar({
@@ -41,8 +40,6 @@ export function AppSidebar({
   isLoadingSuggestions,
   recentSearches,
   onRecentSearchSelect,
-  viewedWords,
-  onViewedWordSelect,
 }: AppSidebarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -84,17 +81,6 @@ export function AppSidebar({
         <RecentSearch
           words={recentSearches}
           onSelect={onRecentSearchSelect}
-        />
-      </div>
-
-      {/* Spacer — pushes viewed words to bottom */}
-      <div className="flex-1 min-h-0" />
-
-      {/* Viewed words — pinned at bottom, scrollable when many items */}
-      <div className="overflow-y-auto shrink-0" style={{ maxHeight: "45%" }}>
-        <RecentViewedSidebar
-          viewedWords={viewedWords}
-          onSelect={onViewedWordSelect}
         />
       </div>
     </aside>

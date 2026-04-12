@@ -7,7 +7,7 @@
  * Data source: WordSummary[] from suggestWords() server action.
  */
 
-import { SuggestionItem } from "@/components/search/SuggestionItem";
+import { WordRow } from "@/components/search/WordRow";
 import type { WordSummary } from "@/core/types";
 
 interface SuggestionBoxProps {
@@ -32,8 +32,12 @@ export function SuggestionBox({
       <ul className="divide-y divide-border">
         {suggestions.map((item, i) => (
           <li key={`${item.simp}-${item.pinyin}-${i}`}>
-            <SuggestionItem
-              item={item}
+            <WordRow
+              simp={item.simp}
+              trad={item.trad}
+              pinyin={item.pinyin}
+              vi={item.vi}
+              en={item.en}
               onSelect={() => onSelect(item.simp)}
             />
           </li>
