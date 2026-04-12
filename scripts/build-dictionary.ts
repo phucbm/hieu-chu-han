@@ -104,6 +104,7 @@ export interface DictEntry {
   mwr?: number;
   bwr?: number;
   tw?: Array<{ word: string; trad: string; gloss: string }>;
+  key?: string; // lookup key when different from s (trad-only entries keyed by trad char)
   etym?: {
     notes: string;
     components: Array<{ char: string; type: string; def: string; p: string; sv: string }>;
@@ -182,7 +183,10 @@ function convertEntry(raw: any): DictEntry {
  * simp entry in chinese-lexicon (e.g. 殺 — paired with 杀 but never its own entry).
  * These get a minimal DictEntry so they can be looked up and displayed separately.
  */
-function buildTradOnlyEntries(simpSet: Set<string>): DictEntry[] {
+function buildTradOnlyEntries(
+  simpSet: Set<string>,
+  tradToSimp: Map<string, string>,
+): DictEntry[] {
   if (!USE_MAKEMEAHANZI) return [];
 
   const extra: DictEntry[] = [];
@@ -193,24 +197,24 @@ function buildTradOnlyEntries(simpSet: Set<string>): DictEntry[] {
     // Skip radicals / CJK components (not standalone words)
     if (!mm.pinyin?.length || !mm.definition) continue;
 
+    const simp = tradToSimp.get(char) ?? char; // actual simplified form, or self if none
     const pinyin = mm.pinyin.join(" / ");
-    entry: {
-      const e: DictEntry = {
-        s: char,
-        t: char,
-        p: pinyin,
-        pt: pinyin,   // approximation — no tone-number conversion
-        sp: pinyin,   // approximation — includes tone marks
-        b: 0.5,       // low boost so it appears below established entries
-        vi: cvdict[char]?.vi ?? "",
-        sv: getSinoViet(char),
-        en: mm.definition ? [mm.definition] : [],
-      };
-      if (mm.etymology) {
-        e.etym = mmEtymToEtym(mm.etymology);
-      }
-      extra.push(e);
+    const e: DictEntry = {
+      key: char,      // lookup key = the trad character
+      s: simp,        // correct simplified form (杀 for 殺)
+      t: char,        // correct traditional form (殺)
+      p: pinyin,
+      pt: pinyin,     // approximation — no tone-number conversion
+      sp: pinyin,     // approximation — includes tone marks
+      b: 0.5,
+      vi: cvdict[char]?.vi ?? "",
+      sv: getSinoViet(simp, char),
+      en: mm.definition ? [mm.definition] : [],
+    };
+    if (mm.etymology) {
+      e.etym = mmEtymToEtym(mm.etymology);
     }
+    extra.push(e);
   }
 
   return extra;
@@ -224,7 +228,15 @@ function main(): void {
   const result: DictEntry[] = allEntries.map(convertEntry);
   const simpSet = new Set(result.map((e) => e.s));
 
-  const tradExtra = buildTradOnlyEntries(simpSet);
+  // Build trad→simp map from chinese-lexicon so trad-only entries get correct s field
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tradToSimp = new Map<string, string>(
+    allEntries
+      .filter((e: any) => e.trad && e.trad !== e.simp)
+      .map((e: any) => [e.trad, e.simp])
+  );
+
+  const tradExtra = buildTradOnlyEntries(simpSet, tradToSimp);
   if (tradExtra.length > 0) {
     console.log(`Adding ${tradExtra.length} trad-only entries from makemeahanzi...`);
     result.push(...tradExtra);

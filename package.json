@@ -1,6 +1,6 @@
 {
   "name": "hieu-chu-han",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.",
   "private": true,
   "scripts": {

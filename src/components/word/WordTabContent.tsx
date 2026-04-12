@@ -13,7 +13,7 @@ import {StrokeBox} from "@/components/word/StrokeBox";
 import {EtymologySection} from "@/components/word/EtymologySection";
 import {DefinitionSection} from "@/components/word/DefinitionSection";
 import {RelatedSection} from "@/components/word/RelatedSection";
-import type {WordEntry} from "@/core/types";
+import {wordKey, type WordEntry} from "@/core/types";
 import {useState} from "react";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";
@@ -36,7 +36,7 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
 
                 {/* Action buttons — top right */}
                 <div className="flex justify-end items-center gap-0.5">
-                    <CopyShareButton simp={entry.simp}/>
+                    <CopyShareButton simp={wordKey(entry)}/>
                     <Button
                         type="button"
                         variant="ghost"
@@ -52,7 +52,7 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
 
                 <div className="grid gap-4" style={{ gridTemplateColumns: isSingleChar ? "1fr 1fr" : "1fr" }}>
                     <WordInfoBox entry={entry}/>
-                    {isSingleChar && <StrokeBox simp={entry.simp} trad={entry.trad}/>}
+                    {isSingleChar && <StrokeBox simp={entry.simp} trad={entry.trad} defaultTrad={!!entry.key}/>}
                 </div>
 
 

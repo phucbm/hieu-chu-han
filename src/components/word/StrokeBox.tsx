@@ -16,12 +16,14 @@ import {Label} from "@/components/ui/label";
 interface StrokeBoxProps {
   simp: string;
   trad: string;
+  /** Start with trad form selected (e.g. when the entry is trad-only) */
+  defaultTrad?: boolean;
 }
 
-export function StrokeBox({ simp, trad }: StrokeBoxProps) {
+export function StrokeBox({ simp, trad, defaultTrad = false }: StrokeBoxProps) {
   const hasDifferentTrad = trad && trad !== simp;
-  const [tradAvailable, setTradAvailable] = useState(false);
-  const [useTrad, setUseTrad] = useState(false);
+  const [tradAvailable, setTradAvailable] = useState(defaultTrad);
+  const [useTrad, setUseTrad] = useState(defaultTrad);
   const character = useTrad ? trad : simp;
 
   useEffect(() => {

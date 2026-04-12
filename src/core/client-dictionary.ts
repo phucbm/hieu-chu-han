@@ -28,6 +28,7 @@ interface DictEntry {
   mwr?: number;
   bwr?: number;
   tw?: Array<{ word: string; trad: string; gloss: string }>;
+  key?: string;
   etym?: {
     notes: string;
     components: Array<{
@@ -56,7 +57,7 @@ async function loadDictionary(): Promise<void> {
     if (!res.ok) throw new Error(`Failed to load dictionary: ${res.status}`);
     const data: DictEntry[] = await res.json();
     entries = data;
-    simpMap = new Map(data.map((e) => [e.s, e]));
+    simpMap = new Map(data.map((e) => [e.key ?? e.s, e]));
     loaded = true;
   })();
 
@@ -113,6 +114,7 @@ function toWordEntry(e: DictEntry, depth = 0): WordEntry {
   return {
     simp: e.s,
     trad: e.t,
+    key: e.key,
     pinyin: e.p,
     pinyinTones: e.pt,
     sinoVietnamese: e.sv,
@@ -142,7 +144,8 @@ function calcRelevance(e: DictEntry, term: string): number {
     }
   }
   // Whole-word bonus on primary fields
-  if (e.s === term || e.t === term || e.sp === term || e.pt === term) {
+  const key = e.key ?? e.s;
+  if (key === term || e.s === term || e.t === term || e.sp === term || e.pt === term) {
     relevance += 10;
   }
   return relevance;
@@ -158,6 +161,7 @@ function runSearch(term: string, limit: number): WordEntry[] {
     .filter(
       (e) =>
         !isPlaceholder(e) && (
+          isSubstringMatch(e.key, t) ||
           isSubstringMatch(e.s, t) ||
           isSubstringMatch(e.t, t) ||
           isSubstringMatch(e.sp, t) ||
@@ -169,8 +173,8 @@ function runSearch(term: string, limit: number): WordEntry[] {
     .sort((a, b) => {
       // Exact simp match gets a large fixed bonus so simp-simp and trad-trad
       // always beat cross-form matches regardless of boost score.
-      const aScore = a.e.b * a.rel + (a.e.s === t ? 10000 : 0);
-      const bScore = b.e.b * b.rel + (b.e.s === t ? 10000 : 0);
+      const aScore = a.e.b * a.rel + ((a.e.key ?? a.e.s) === t ? 10000 : 0);
+      const bScore = b.e.b * b.rel + ((b.e.key ?? b.e.s) === t ? 10000 : 0);
       return bScore - aScore;
     })
     .slice(0, limit)

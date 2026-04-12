@@ -20,7 +20,7 @@ import { SearchInput } from "@/components/search/SearchInput";
 import { RecentSearch } from "@/components/search/RecentSearch";
 import { WordRow } from "@/components/search/WordRow";
 import { HandwritingModal } from "@/components/HandwritingModal";
-import type { WordEntry } from "@/core/types";
+import { wordKey, type WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface SearchBoxProps {
@@ -96,7 +96,7 @@ export function SearchBox({
                         entry={item}
                         onSelect={() => {
                           setFocused(false);
-                          onResultSelect(item.simp);
+                          onResultSelect(wordKey(item));
                         }}
                       />
                     </li>
@@ -133,7 +133,7 @@ export function SearchBox({
             <li key={`${item.simp}-${item.pinyin}-${i}`}>
               <WordRow
                 entry={item}
-                onSelect={() => onResultSelect(item.simp)}
+                onSelect={() => onResultSelect(wordKey(item))}
               />
             </li>
           ))}

@@ -47,6 +47,8 @@ export interface WordEntry {
   pinyinTones: string;
   /** Sino-Vietnamese reading from kVietnamese (Unihan) */
   sinoVietnamese: string;
+  /** Lookup key when different from simp — set for trad-only entries (e.g. key='殺', simp='杀') */
+  key?: string;
   /** Sino-Vietnamese inferred by joining each character's sinoVietnamese (multi-char words only) */
   inferredSinoVietnamese: string;
   /** English definitions — Source: chinese-lexicon */
@@ -63,6 +65,11 @@ export interface WordEntry {
 
 // Search results array
 export type SearchResult = WordEntry[];
+
+/** Returns the canonical lookup key for an entry (key field if set, otherwise simp). */
+export function wordKey(entry: WordEntry): string {
+  return entry.key ?? entry.simp;
+}
 
 // Lightweight summary used for suggestion dropdown and results list
 export interface WordSummary {

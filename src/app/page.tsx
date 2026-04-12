@@ -31,7 +31,7 @@ import {WordTabs} from "@/components/word/WordTabs";
 import {Skeleton} from "@/components/ui/skeleton";
 import {getWordEntries, searchWords} from "@/app/actions";
 import {useViewedWords} from "@/hooks/useViewedWords";
-import type {WordEntry} from "@/core/types";
+import {wordKey, type WordEntry} from "@/core/types";
 
 // ── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -87,7 +87,7 @@ export default function HomePage() {
                 setSelectedEntries(entries);
                 if (entries[0]) {
                     addViewedWord({
-                        simp: entries[0].simp,
+                        simp: wordKey(entries[0]),
                         trad: entries[0].trad,
                         pinyin: entries[0].pinyin,
                         sinoViet: entries[0].sinoVietnamese || undefined,
@@ -97,7 +97,7 @@ export default function HomePage() {
                     window.history.replaceState(
                         null,
                         "",
-                        `?word=${encodeURIComponent(entries[0].simp)}`
+                        `?word=${encodeURIComponent(wordKey(entries[0]))}`
                     );
                 }
             });

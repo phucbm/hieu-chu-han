@@ -9,7 +9,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WordTabContent } from "@/components/word/WordTabContent";
-import type { WordEntry } from "@/core/types";
+import { wordKey, type WordEntry } from "@/core/types";
 
 interface WordTabsProps {
   entries: WordEntry[];
@@ -19,9 +19,9 @@ interface WordTabsProps {
 export function WordTabs({ entries, onWordClick }: WordTabsProps) {
   if (entries.length === 0) return null;
 
-  // Deduplicate by simp — e.g. 一生一世 may produce two 一 entries from segmentation
+  // Deduplicate by lookup key — e.g. 一生一世 may produce two 一 entries from segmentation
   const unique = entries.filter(
-    (e, i) => entries.findIndex((x) => x.simp === e.simp) === i
+    (e, i) => entries.findIndex((x) => wordKey(x) === wordKey(e)) === i
   );
 
   if (unique.length === 1) {
@@ -29,22 +29,22 @@ export function WordTabs({ entries, onWordClick }: WordTabsProps) {
   }
 
   return (
-    <Tabs defaultValue={unique[0].simp} className="w-full">
+    <Tabs defaultValue={wordKey(unique[0])} className="w-full">
       <div className="sticky top-0 z-20 bg-background">
         <TabsList className="w-full overflow-x-auto h-auto gap-1 p-1 flex flex-nowrap justify-start">
           {unique.map((entry, i) => (
             <TabsTrigger
-              key={`${entry.simp}-${i}`}
-              value={entry.simp}
+              key={`${wordKey(entry)}-${i}`}
+              value={wordKey(entry)}
               className="shrink-0 text-xl font-chinese font-medium w-auto"
             >
-              {entry.simp}
+              {entry.key ? entry.trad : entry.simp}
             </TabsTrigger>
           ))}
         </TabsList>
       </div>
       {unique.map((entry, i) => (
-        <TabsContent key={`${entry.simp}-${i}`} value={entry.simp}>
+        <TabsContent key={`${wordKey(entry)}-${i}`} value={wordKey(entry)}>
           <WordTabContent entry={entry} onWordClick={onWordClick} />
         </TabsContent>
       ))}

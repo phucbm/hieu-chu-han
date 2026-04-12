@@ -24,8 +24,11 @@ interface WordRowProps {
 }
 
 export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) {
-  const { simp, trad, pinyin, definitionVi, definitionsEn } = entry;
+  const { simp, trad, pinyin, definitionVi, definitionsEn, key } = entry;
   const showTrad = trad && trad !== simp;
+  // Trad-only entries: show trad first since that's the lookup key
+  const primary = key ? trad : simp;
+  const secondary = key ? simp : (showTrad ? trad : null);
   const definition = definitionVi || definitionsEn[0];
 
   return (
@@ -40,17 +43,17 @@ export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) 
       >
         {/* Large character anchor */}
         <span className="hidden font-chinese text-2xl font-medium w-9 shrink-0 text-center leading-none">
-          {simp}
+          {primary}
         </span>
 
         {/* Text info */}
         <span className="flex flex-col min-w-0 flex-1">
-          {/* Row 1: simp + optional trad */}
+          {/* Row 1: primary + optional secondary */}
           <span className="flex flex-wrap items-baseline gap-x-1.5 leading-tight">
-            <span className="font-chinese font-medium text-sm">{simp}</span>
-            {showTrad && (
+            <span className="font-chinese font-medium text-sm">{primary}</span>
+            {secondary && (
               <span className="font-chinese text-xs text-muted-foreground">
-                ({trad})
+                ({secondary})
               </span>
             )}
           </span>
