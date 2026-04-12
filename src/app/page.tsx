@@ -10,7 +10,7 @@
  *
  * Mobile layout (<1024px): stacked
  *   Row 1 sticky: AppHeader
- *   Row 2 sticky: SearchInput + RecentSearch + SuggestionBox overlay
+ *   Row 2 sticky: SearchBox (input + recent searches + popover results)
  *   Row 3 scroll: word detail
  *   HistoryBottomSheet: overlay for viewed words
  *
@@ -32,9 +32,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { HistoryBottomSheet } from "@/components/layout/HistoryBottomSheet";
 import { RecentViewedPanel } from "@/components/layout/RecentViewedPanel";
-import { SearchInput } from "@/components/search/SearchInput";
-import { SuggestionBox } from "@/components/search/SuggestionBox";
-import { RecentSearch } from "@/components/search/RecentSearch";
+import { SearchBox } from "@/components/search/SearchBox";
 import { WordTabs } from "@/components/word/WordTabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchWords, getWordEntries } from "@/app/actions";
@@ -59,14 +57,6 @@ export default function HomePage() {
 
   // Search results: top 20, fetched on debounce, drives both desktop list and mobile dropdown
   const [results, setResults] = useState<WordSummary[]>([]);
-
-  // Desktop: results list visible whenever input has a value (no focus requirement)
-  const showResults = results.length > 0 && query.trim().length > 0;
-
-  // Mobile: floating dropdown — top 10, only while input is focused
-  const [inputFocused, setInputFocused] = useState(false);
-  const mobileSuggestions = results.slice(0, 10);
-  const showMobileSuggestions = inputFocused && mobileSuggestions.length > 0;
 
   // Selected word detail
   const [selectedEntries, setSelectedEntries] = useState<WordEntry[]>([]);
@@ -98,7 +88,6 @@ export default function HomePage() {
     (simp: string) => {
       if (!simp.trim()) return;
       setQuery(simp);
-      setInputFocused(false);
       startDetailTransition(async () => {
         const entries = await getWordEntries(simp);
         setSelectedEntries(entries);
@@ -133,11 +122,6 @@ export default function HomePage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ─────────────────────────────────────────────────────────────
-  /** Hides the mobile floating dropdown (clears input focus flag) */
-  const dismissMobileSuggestions = useCallback(() => {
-    setInputFocused(false);
-  }, []);
-
   /**
    * Recent search badge: appends simp to the current input value.
    * Does NOT replace — lets users compose compound queries.
@@ -165,9 +149,7 @@ export default function HomePage() {
         query={query}
         onQueryChange={setQuery}
         results={results}
-        showResults={showResults}
         onResultSelect={openWord}
-        onInputFocus={() => setInputFocused(true)}
         onDismissResults={() => setResults([])}
         isLoading={isSuggestPending}
         recentSearches={viewedWords.slice(0, 5)}
@@ -187,34 +169,15 @@ export default function HomePage() {
 
         {/* Row 2: sticky below header */}
         <div className="sticky top-14 z-20 bg-background border-b px-4 py-3">
-          {/* Relative container for SuggestionBox positioning */}
-          <div
-            className="relative"
-            onBlur={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                dismissMobileSuggestions();
-              }
-            }}
-          >
-            <SearchInput
-              value={query}
-              onChange={setQuery}
-              isLoading={isSuggestPending}
-              onFocus={() => setInputFocused(true)}
-              onEscape={dismissMobileSuggestions}
-            />
-            <SuggestionBox
-              visible={showMobileSuggestions}
-              suggestions={mobileSuggestions}
-              onSelect={(simp) => {
-                dismissMobileSuggestions();
-                openWord(simp);
-              }}
-            />
-          </div>
-          <RecentSearch
-            words={viewedWords.slice(0, 5)}
-            onSelect={handleRecentSearchAppend}
+          <SearchBox
+            popover
+            query={query}
+            onQueryChange={setQuery}
+            results={results}
+            isLoading={isSuggestPending}
+            recentSearches={viewedWords.slice(0, 5)}
+            onRecentSearchSelect={handleRecentSearchAppend}
+            onResultSelect={openWord}
           />
         </div>
       </div>
