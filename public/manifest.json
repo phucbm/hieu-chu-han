@@ -1,0 +1,27 @@
+{
+  "name": "Hiểu Chữ Hán",
+  "short_name": "HánTự",
+  "description": "Từ điển Hán Việt: tra nghĩa, cách đọc Hán Việt, hoạt ảnh nét chữ và phân tích tự nguyên.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["education", "reference"]
+}
