@@ -29,7 +29,7 @@ function toWordSummary(entry: WordEntry): WordSummary {
 export async function suggestWords(query: string): Promise<WordSummary[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  return lookupWord(trimmed).slice(0, 8).map(toWordSummary);
+  return lookupWord(trimmed).slice(0, 10).map(toWordSummary);
 }
 
 /**

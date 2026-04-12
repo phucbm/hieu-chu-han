@@ -37,7 +37,7 @@ import { SuggestionBox } from "@/components/search/SuggestionBox";
 import { RecentSearch } from "@/components/search/RecentSearch";
 import { WordTabs } from "@/components/word/WordTabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { suggestWords, getWordEntries } from "@/app/actions";
+import { searchWords, getWordEntries } from "@/app/actions";
 import { useViewedWords } from "@/hooks/useViewedWords";
 import type { WordEntry, WordSummary } from "@/core/types";
 
@@ -55,13 +55,18 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function HomePage() {
   // Search input state
   const [query, setQuery] = useState("");
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, 600);
 
-  // Auto-suggest dropdown
-  const [suggestions, setSuggestions] = useState<WordSummary[]>([]);
-  // Suggestions only visible while input has focus
+  // Search results: top 20, fetched on debounce, drives both desktop list and mobile dropdown
+  const [results, setResults] = useState<WordSummary[]>([]);
+
+  // Desktop: results list visible whenever input has a value (no focus requirement)
+  const showResults = results.length > 0 && query.trim().length > 0;
+
+  // Mobile: floating dropdown — top 10, only while input is focused
   const [inputFocused, setInputFocused] = useState(false);
-  const showSuggestions = inputFocused && suggestions.length > 0;
+  const mobileSuggestions = results.slice(0, 10);
+  const showMobileSuggestions = inputFocused && mobileSuggestions.length > 0;
 
   // Selected word detail
   const [selectedEntries, setSelectedEntries] = useState<WordEntry[]>([]);
@@ -76,15 +81,15 @@ export default function HomePage() {
   // Viewed words history
   const { viewedWords, addViewedWord, removeViewedWord } = useViewedWords();
 
-  // ── Auto-suggest: fires 300ms after the user stops typing ─────────────────
+  // ── Fetch results: 600ms debounce, top 20 ────────────────────────────────
   useEffect(() => {
     if (!debouncedQuery.trim()) {
-      setSuggestions([]);
+      setResults([]);
       return;
     }
     startSuggestTransition(async () => {
-      const items = await suggestWords(debouncedQuery);
-      setSuggestions(items);
+      const items = await searchWords(debouncedQuery);
+      setResults(items);
     });
   }, [debouncedQuery]);
 
@@ -128,7 +133,8 @@ export default function HomePage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ─────────────────────────────────────────────────────────────
-  const dismissSuggestions = useCallback(() => {
+  /** Hides the mobile floating dropdown (clears input focus flag) */
+  const dismissMobileSuggestions = useCallback(() => {
     setInputFocused(false);
   }, []);
 
@@ -158,12 +164,12 @@ export default function HomePage() {
       <AppSidebar
         query={query}
         onQueryChange={setQuery}
-        suggestions={suggestions}
-        showSuggestions={showSuggestions}
-        onSuggestionSelect={openWord}
+        results={results}
+        showResults={showResults}
+        onResultSelect={openWord}
         onInputFocus={() => setInputFocused(true)}
-        onDismissSuggestions={dismissSuggestions}
-        isLoadingSuggestions={isSuggestPending}
+        onDismissResults={() => setResults([])}
+        isLoading={isSuggestPending}
         recentSearches={viewedWords.slice(0, 5)}
         onRecentSearchSelect={handleRecentSearchAppend}
       />
@@ -186,7 +192,7 @@ export default function HomePage() {
             className="relative"
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                dismissSuggestions();
+                dismissMobileSuggestions();
               }
             }}
           >
@@ -195,13 +201,13 @@ export default function HomePage() {
               onChange={setQuery}
               isLoading={isSuggestPending}
               onFocus={() => setInputFocused(true)}
-              onEscape={dismissSuggestions}
+              onEscape={dismissMobileSuggestions}
             />
             <SuggestionBox
-              visible={showSuggestions}
-              suggestions={suggestions}
+              visible={showMobileSuggestions}
+              suggestions={mobileSuggestions}
               onSelect={(simp) => {
-                dismissSuggestions();
+                dismissMobileSuggestions();
                 openWord(simp);
               }}
             />
