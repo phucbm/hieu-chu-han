@@ -12,6 +12,7 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+    --color-sinoviet:var(--color-blue-600);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);

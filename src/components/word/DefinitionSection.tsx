@@ -34,30 +34,30 @@ export function DefinitionSection({ entry }: DefinitionSectionProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Nghĩa
-      </p>
+        <div className="flex gap-3">
+            <p className="text-sm">Nghĩa</p>
 
-      {/* Usage stats */}
-      {hasStats && (
-        <div className="flex flex-wrap gap-2">
-          {statistics.hskLevel && (
-            <Badge variant={hskVariant(statistics.hskLevel)}>
-              HSK {statistics.hskLevel}
-            </Badge>
-          )}
-            {/*{statistics.movieWordRank && (*/}
-            {/*  <Badge variant="outline" className="text-xs">*/}
-            {/*    Phim: #{statistics.movieWordRank}*/}
-            {/*  </Badge>*/}
-            {/*)}*/}
-            {/*{statistics.bookWordRank && (*/}
-            {/*  <Badge variant="outline" className="text-xs">*/}
-            {/*    Sách: #{statistics.bookWordRank}*/}
-            {/*  </Badge>*/}
-            {/*)}*/}
+            {/* Usage stats */}
+            {hasStats && (
+                <div className="flex flex-wrap gap-2">
+                    {statistics.hskLevel && (
+                        <Badge variant={hskVariant(statistics.hskLevel)}>
+                            HSK {statistics.hskLevel}
+                        </Badge>
+                    )}
+                    {/*{statistics.movieWordRank && (*/}
+                    {/*  <Badge variant="outline" className="text-xs">*/}
+                    {/*    Phim: #{statistics.movieWordRank}*/}
+                    {/*  </Badge>*/}
+                    {/*)}*/}
+                    {/*{statistics.bookWordRank && (*/}
+                    {/*  <Badge variant="outline" className="text-xs">*/}
+                    {/*    Sách: #{statistics.bookWordRank}*/}
+                    {/*  </Badge>*/}
+                    {/*)}*/}
+                </div>
+            )}
         </div>
-      )}
 
       {/* Definitions */}
       <div className="flex flex-col gap-2">
