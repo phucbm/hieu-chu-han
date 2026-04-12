@@ -9,6 +9,9 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  output: "export",
+  // Image optimization is not available in static export
+  images: { unoptimized: true },
   // Empty turbopack config silences the "no turbopack config" error in dev
   turbopack: {},
 };

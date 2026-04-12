@@ -1,11 +1,12 @@
-"use server";
-
 /**
- * actions.ts — Next.js Server Actions for dictionary lookup
- * Runs server-side; chinese-lexicon uses Node.js `fs` and cannot be bundled for the browser.
+ * actions.ts — Dictionary lookup functions
+ *
+ * Runs client-side: data is fetched from /data/dictionary.json (generated
+ * once by `npx tsx scripts/build-dictionary.ts` and committed to the repo).
+ * No server required — compatible with `output: 'export'` (static site).
  */
 
-import { lookupWord, getWordDetail } from "@/core/dictionary";
+import { lookupWord, getWordDetail } from "@/core/client-dictionary";
 import { isCompound, segmentWord } from "@/core/segmenter";
 import type { WordEntry, WordSummary } from "@/core/types";
 
@@ -23,38 +24,33 @@ function toWordSummary(entry: WordEntry): WordSummary {
 }
 
 /**
- * Get auto-suggest results while the user is typing (top 8).
- * Source: chinese-lexicon search, enriched with CVDICT + kVietnamese
+ * Get auto-suggest results while the user is typing (top 10).
  */
 export async function suggestWords(query: string): Promise<WordSummary[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  return lookupWord(trimmed).slice(0, 10).map(toWordSummary);
+  return (await lookupWord(trimmed)).slice(0, 10).map(toWordSummary);
 }
 
 /**
  * Get a results list when the user submits a search (top 20).
- * Source: chinese-lexicon search, enriched with CVDICT + kVietnamese
  */
 export async function searchWords(query: string): Promise<WordSummary[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  return lookupWord(trimmed).slice(0, 20).map(toWordSummary);
+  return (await lookupWord(trimmed)).slice(0, 20).map(toWordSummary);
 }
 
 /**
  * Get full WordEntry array for a selected word to render CharCard / TabView.
  * For compound words: returns [fullWordEntry, char1Entry, char2Entry, ...].
  * For single chars/pinyin: returns [singleEntry].
- * Source: chinese-lexicon getEntries/search, enriched with CVDICT + kVietnamese
  */
 export async function getWordEntries(input: string): Promise<WordEntry[]> {
   const trimmed = input.trim();
   if (!trimmed) return [];
 
   if (isCompound(trimmed)) {
-    // segmentWord returns [fullWord, char1, char2, ...]
-    // Deduplicate while preserving order (e.g. 一生一世 → [一生一世, 一, 生, 世])
     const rawSegments = segmentWord(trimmed);
     const seen = new Set<string>();
     const segments = rawSegments.filter((seg) => {
@@ -62,26 +58,19 @@ export async function getWordEntries(input: string): Promise<WordEntry[]> {
       seen.add(seg);
       return true;
     });
-    return segments
-      .map((seg): WordEntry | null => {
-        const detail = getWordDetail(seg);
+    const results = await Promise.all(
+      segments.map(async (seg): Promise<WordEntry | null> => {
+        const detail = await getWordDetail(seg);
         if (detail) return detail;
-        // Fallback: first search result for the segment
-        return lookupWord(seg)[0] ?? null;
+        const found = await lookupWord(seg);
+        return found[0] ?? null;
       })
-      .filter((e): e is WordEntry => e !== null);
+    );
+    return results.filter((e): e is WordEntry => e !== null);
   }
 
-  // Single character or pinyin: try exact match first, then search
-  const detail = getWordDetail(trimmed);
+  const detail = await getWordDetail(trimmed);
   if (detail) return [detail];
-  return lookupWord(trimmed).slice(0, 1);
-}
-
-/**
- * @deprecated Use getWordEntries + searchWords instead.
- * Kept for backwards compatibility during the transition.
- */
-export async function searchDictionary(input: string): Promise<WordEntry[]> {
-  return getWordEntries(input);
+  const found = await lookupWord(trimmed);
+  return found.slice(0, 1);
 }
