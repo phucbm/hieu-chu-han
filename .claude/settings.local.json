@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:serwist.pages.dev)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npx shadcn@latest:*)"
+    ]
+  }
+}
