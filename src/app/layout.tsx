@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Serif, Noto_Serif_SC } from "next/font/google";
+import { SwAutoUpdate } from "@/components/SwAutoUpdate";
 import "./globals.css";
 
 /**
@@ -61,6 +62,7 @@ export default function RootLayout({
       className={`${notoSerif.variable} ${notoSerifSC.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-serif">
+        <SwAutoUpdate />
         {children}
       </body>
     </html>
