@@ -184,7 +184,6 @@ export default function HomePage() {
           {/* Relative container for SuggestionBox positioning */}
           <div
             className="relative"
-            onFocus={() => setInputFocused(true)}
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                 dismissSuggestions();
@@ -195,6 +194,7 @@ export default function HomePage() {
               value={query}
               onChange={setQuery}
               isLoading={isSuggestPending}
+              onFocus={() => setInputFocused(true)}
               onEscape={dismissSuggestions}
             />
             <SuggestionBox

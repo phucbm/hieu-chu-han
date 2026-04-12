@@ -15,6 +15,8 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   isLoading?: boolean;
   onEscape?: () => void;
+  /** Fired only when the <input> itself receives focus */
+  onFocus?: () => void;
   placeholder?: string;
 }
 
@@ -25,6 +27,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       onChange,
       isLoading,
       onEscape,
+      onFocus,
       placeholder = "Nhập chữ Hán, pinyin...",
     },
     ref
@@ -36,6 +39,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               onEscape?.();

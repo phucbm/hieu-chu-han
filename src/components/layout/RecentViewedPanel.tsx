@@ -2,7 +2,8 @@
 
 /**
  * RecentViewedPanel — Fixed right column for desktop (≥1024px).
- * Shows all viewed words as WordRows with per-row remove buttons.
+ * Shows all viewed words as WordRows.
+ * Each row shows the word info + 👁 view count, with a remove button on hover.
  * Data source: useViewedWords hook (hch_viewed_words localStorage)
  */
 
@@ -34,7 +35,7 @@ export function RecentViewedPanel({
           </p>
         </div>
       ) : (
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <ul className="divide-y divide-border">
             {viewedWords.map((w) => (
               <li key={w.simp}>
@@ -43,6 +44,7 @@ export function RecentViewedPanel({
                   trad={w.trad}
                   pinyin={w.pinyin}
                   vi={w.sinoViet}
+                  viewCount={w.viewedAt.length}
                   onSelect={() => onSelect(w.simp)}
                   onRemove={() => onRemove(w.simp)}
                 />
