@@ -6,17 +6,19 @@
  * Renders as a <button> if onClick is provided, otherwise a <div>.
  */
 
+import type {WordEntry} from "@/core/types";
+
 interface WordBadgeProps {
-  simp: string;
-  pinyin?: string;
+    entry: WordEntry;
   onClick?: () => void;
   className?: string;
 }
 
-export function WordBadge({ simp, pinyin, onClick, className }: WordBadgeProps) {
+export function WordBadge({entry, onClick, className}: WordBadgeProps) {
+    const {simp, pinyin, sinoVietnamese} = entry;
   const base =
-    "inline-flex flex-col items-center rounded-lg border px-3 py-1.5 text-center min-w-[3rem]";
-  const interactive = "cursor-pointer hover:bg-muted transition-colors";
+      "inline-flex flex-col items-center rounded-lg border px-3 py-1.5 text-center min-w-[3rem] bg-white";
+    const interactive = "cursor-pointer hover:bg-blue-50 transition-colors";
 
   if (onClick) {
     return (
@@ -25,14 +27,21 @@ export function WordBadge({ simp, pinyin, onClick, className }: WordBadgeProps) 
         onClick={onClick}
         className={`${base} ${interactive} ${className ?? ""}`}
       >
-        <span className="font-chinese font-medium text-base leading-tight">
+        <span className="font-chinese font-medium text-lg leading-tight">
           {simp}
         </span>
-        {pinyin && (
-          <span className="text-xs text-muted-foreground leading-tight">
+          <span className="flex gap-1">
+            {pinyin && (
+                <span className="text-sm text-muted-foreground leading-tight">
             {pinyin}
           </span>
-        )}
+            )}
+              {sinoVietnamese && (
+                  <span className="text-sm leading-tight text-sinoviet">
+            {sinoVietnamese}
+          </span>
+              )}
+        </span>
       </button>
     );
   }

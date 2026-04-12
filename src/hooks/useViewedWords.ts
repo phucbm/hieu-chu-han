@@ -7,12 +7,14 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import type { WordEntry } from "@/core/types";
 
 export interface ViewedWord {
   simp: string;
   trad?: string;
   pinyin?: string;
   sinoViet?: string;
+  entry?: WordEntry;
   /** ISO datetime of first view */
   firstViewedAt: string;
   /** ISO datetime of most recent view */

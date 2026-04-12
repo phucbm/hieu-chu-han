@@ -52,22 +52,28 @@ function getVietnameseMeaning(simp: string): string {
 
 /**
  * Map etymology components and enrich with Sino-Vietnamese readings.
+ * depth guards against infinite recursion when entries reference each other.
  */
 function buildEtymology(
-  raw: NonNullable<LexiconEntry["simpEtymology"]>
+  raw: NonNullable<LexiconEntry["simpEtymology"]>,
+  depth: number
 ): Etymology {
-  const components: EtymologyComponent[] = raw.components.map((c) => ({
-    char: c.char,
-    type:
-      c.type === "meaning"
-        ? "meaning"
-        : c.type === "sound"
-          ? "sound"
-          : "unknown",
-    definition: c.definition,
-    pinyin: c.pinyin,
-    sinoVietnamese: getSinoVietnamese(c.char),
-  }));
+  const components: EtymologyComponent[] = raw.components.map((c) => {
+    const compEntries = depth < 1 ? getEntries(c.char) : [];
+    return {
+      char: c.char,
+      type:
+        c.type === "meaning"
+          ? "meaning"
+          : c.type === "sound"
+            ? "sound"
+            : "unknown",
+      definition: c.definition,
+      pinyin: c.pinyin,
+      sinoVietnamese: getSinoVietnamese(c.char),
+      entry: compEntries[0] ? enrichEntry(compEntries[0], depth + 1) : undefined,
+    };
+  });
 
   return {
     notes: raw.notes,
@@ -77,18 +83,28 @@ function buildEtymology(
 
 /**
  * Convert a LexiconEntry to a full WordEntry, enriched with VI/Sino-Viet data.
+ * depth guards against infinite recursion when entries reference each other.
  */
-function enrichEntry(raw: LexiconEntry): WordEntry {
+function enrichEntry(raw: LexiconEntry, depth = 0): WordEntry {
   const sinoVietnamese = getSinoVietnamese(raw.simp);
   const definitionVi = getVietnameseMeaning(raw.simp);
   const etymology = raw.simpEtymology
-    ? buildEtymology(raw.simpEtymology)
+    ? buildEtymology(raw.simpEtymology, depth)
     : undefined;
 
   const stats = raw.statistics ?? {};
   const relatedWords = (stats.topWords ?? [])
     .filter((w) => w.word !== raw.simp)
-    .slice(0, 8);
+    .slice(0, 8)
+    .map((w) => {
+      const relEntries = depth < 1 ? getEntries(w.word) : [];
+      return {
+        word: w.word,
+        trad: w.trad,
+        gloss: w.gloss,
+        entry: relEntries[0] ? enrichEntry(relEntries[0], depth + 1) : undefined,
+      };
+    });
 
   return {
     simp: raw.simp,

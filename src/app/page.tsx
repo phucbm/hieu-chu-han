@@ -37,7 +37,7 @@ import { WordTabs } from "@/components/word/WordTabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchWords, getWordEntries } from "@/app/actions";
 import { useViewedWords } from "@/hooks/useViewedWords";
-import type { WordEntry, WordSummary } from "@/core/types";
+import type { WordEntry } from "@/core/types";
 
 // ── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -56,7 +56,7 @@ export default function HomePage() {
   const debouncedQuery = useDebounce(query, 600);
 
   // Search results: top 20, fetched on debounce, drives both desktop list and mobile dropdown
-  const [results, setResults] = useState<WordSummary[]>([]);
+  const [results, setResults] = useState<WordEntry[]>([]);
 
   // Selected word detail
   const [selectedEntries, setSelectedEntries] = useState<WordEntry[]>([]);
@@ -97,6 +97,7 @@ export default function HomePage() {
             trad: entries[0].trad,
             pinyin: entries[0].pinyin,
             sinoViet: entries[0].sinoVietnamese || undefined,
+            entry: entries[0],
           });
           // Update URL without triggering a navigation
           window.history.replaceState(
@@ -187,7 +188,7 @@ export default function HomePage() {
       {/* Mobile: normal document flow */}
       <main className="lg:pl-80 lg:pr-72 lg:h-screen lg:overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
         {detailContent ? (
-          <div className="max-w-3xl mx-auto">{detailContent}</div>
+          <div className="">{detailContent}</div>
         ) : (
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center text-muted-foreground gap-3">
             <span className="font-chinese text-7xl opacity-15 select-none">

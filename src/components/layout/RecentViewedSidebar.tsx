@@ -27,11 +27,10 @@ export function RecentViewedSidebar({
       </p>
       <ScrollArea className="flex-1">
         <div className="flex flex-wrap gap-2 px-5 pb-5">
-          {viewedWords.map((w) => (
+          {viewedWords.filter((w) => w.entry).map((w) => (
             <WordBadge
               key={w.simp}
-              simp={w.simp}
-              pinyin={w.pinyin}
+              entry={w.entry!}
               onClick={() => onSelect(w.simp)}
             />
           ))}

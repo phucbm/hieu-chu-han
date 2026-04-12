@@ -35,10 +35,10 @@ export async function suggestWords(query: string): Promise<WordSummary[]> {
 /**
  * Get a results list when the user submits a search (top 20).
  */
-export async function searchWords(query: string): Promise<WordSummary[]> {
+export async function searchWords(query: string): Promise<WordEntry[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  return (await lookupWord(trimmed)).slice(0, 20).map(toWordSummary);
+  return (await lookupWord(trimmed)).slice(0, 20);
 }
 
 /**

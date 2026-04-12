@@ -9,13 +9,13 @@
 
 import { AppLogo } from "@/components/layout/AppLogo";
 import { SearchBox } from "@/components/search/SearchBox";
-import type { WordSummary } from "@/core/types";
+import type { WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface AppSidebarProps {
   query: string;
   onQueryChange: (value: string) => void;
-  results: WordSummary[];
+  results: WordEntry[];
   onResultSelect: (simp: string) => void;
   onDismissResults: () => void;
   isLoading: boolean;

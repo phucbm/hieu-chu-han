@@ -33,13 +33,10 @@ export function ViewedWordList({
   return (
     <ScrollArea className="flex-1 min-h-0">
       <ul className="divide-y divide-border">
-        {viewedWords.map((w) => (
+        {viewedWords.filter((w) => w.entry).map((w) => (
           <li key={w.simp}>
             <WordRow
-              simp={w.simp}
-              trad={w.trad}
-              pinyin={w.pinyin}
-              vi={w.sinoViet}
+              entry={w.entry!}
               viewCount={w.viewedAt.length}
               onSelect={() => onSelect(w.simp)}
               onRemove={() => onRemove(w.simp)}

@@ -16,7 +16,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { SearchInput } from "@/components/search/SearchInput";
 import { RecentSearch } from "@/components/search/RecentSearch";
 import { WordRow } from "@/components/search/WordRow";
-import type { WordSummary } from "@/core/types";
+import type { WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface SearchBoxProps {
@@ -24,7 +24,7 @@ interface SearchBoxProps {
   popover?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
-  results: WordSummary[];
+  results: WordEntry[];
   isLoading?: boolean;
   recentSearches: ViewedWord[];
   onRecentSearchSelect: (simp: string) => void;
@@ -82,11 +82,7 @@ export function SearchBox({
                   {results.map((item, i) => (
                     <li key={`${item.simp}-${item.pinyin}-${i}`}>
                       <WordRow
-                        simp={item.simp}
-                        trad={item.trad}
-                        pinyin={item.pinyin}
-                        vi={item.vi}
-                        en={item.en}
+                        entry={item}
                         onSelect={() => {
                           setFocused(false);
                           onResultSelect(item.simp);
@@ -118,11 +114,7 @@ export function SearchBox({
           {results.map((item, i) => (
             <li key={`${item.simp}-${item.pinyin}-${i}`}>
               <WordRow
-                simp={item.simp}
-                trad={item.trad}
-                pinyin={item.pinyin}
-                vi={item.vi}
-                en={item.en}
+                entry={item}
                 onSelect={() => onResultSelect(item.simp)}
               />
             </li>

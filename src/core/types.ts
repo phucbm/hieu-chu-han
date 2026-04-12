@@ -18,6 +18,8 @@ export interface EtymologyComponent {
   pinyin: string;
   /** Sino-Vietnamese reading, enriched from kVietnamese */
   sinoVietnamese?: string;
+    /** Full entry for the component character, if found in the dictionary */
+    entry?: WordEntry;
 }
 
 // Etymology breakdown for a character
@@ -54,7 +56,7 @@ export interface WordEntry {
   /** Usage statistics */
   statistics: WordStatistics;
   /** Related/compound words */
-  relatedWords: Array<{ word: string; trad: string; gloss: string }>;
+  relatedWords: Array<{ word: string; trad: string; gloss: string; entry?: WordEntry }>;
 }
 
 // Search results array

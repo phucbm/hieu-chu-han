@@ -2,8 +2,7 @@
 
 /**
  * WordRow — Generic word list row.
- * Used in SuggestionBox (search results), AppSidebar inline list,
- * and RecentViewedPanel (history with view count).
+ * Used in SearchBox (search results) and ViewedWordList (history with view count).
  *
  * Layout:
  *   Left:   large Chinese character for quick visual ID
@@ -13,13 +12,10 @@
  */
 
 import { X, Eye } from "lucide-react";
+import type { WordEntry } from "@/core/types";
 
 interface WordRowProps {
-  simp: string;
-  trad?: string;
-  pinyin?: string;
-  vi?: string;
-  en?: string;
+  entry: WordEntry;
   onSelect: () => void;
   /** When provided, shows 👁 N in row 2 */
   viewCount?: number;
@@ -27,18 +23,10 @@ interface WordRowProps {
   onRemove?: () => void;
 }
 
-export function WordRow({
-  simp,
-  trad,
-  pinyin,
-  vi,
-  en,
-  onSelect,
-  viewCount,
-  onRemove,
-}: WordRowProps) {
+export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) {
+  const { simp, trad, pinyin, definitionVi, definitionsEn } = entry;
   const showTrad = trad && trad !== simp;
-  const definition = vi || en;
+  const definition = definitionVi || definitionsEn[0];
 
   return (
     <div className="group flex items-stretch">

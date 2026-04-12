@@ -20,35 +20,33 @@ export function EtymologySection({ entry, onWordClick }: EtymologySectionProps) 
 
     return (
         <div className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm">
                 Phân tích chữ
             </p>
 
-            <div className="rounded-xl p-4 bg-stone-100">
+            <div className="rounded-xl p-4 bg-stone-100 flex flex-col gap-3">
 
                 {etymology.notes && (
-                    <p className="text-sm text-muted-foreground italic">{etymology.notes}</p>
+                    <p className="text-sm italic">{etymology.notes}</p>
                 )}
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-3">
                     {etymology.components.map((comp, i) => (
                         <div key={`${comp.char}-${i}`} className="">
 
-                            <WordBadge
-                                simp={comp.char}
-                                pinyin={comp.pinyin || undefined}
-                                onClick={() => onWordClick(comp.char)}
-                            />
-                            <div className="">
-                                  <span className="text-xs text-muted-foreground">
-                                    {comp.type === "meaning" ? "nghĩa" : "âm"}
+                            {comp.entry ? (
+                                <div className="flex flex-col justify-center items-center gap-1">
+                                    <WordBadge
+                                        entry={comp.entry}
+                                        onClick={() => onWordClick(comp.char)}
+                                    />
+                                    <span className="text-xs text-muted-foreground">
+                                    {comp.type === "meaning" ? "(nghĩa)" : "(âm)"}
                                   </span>
-                                {comp.sinoVietnamese && (
-                                    <span className="text-xs text-primary font-medium">
-                  {comp.sinoVietnamese}
-                </span>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <span className="font-chinese font-medium text-base">{comp.char}</span>
+                            )}
                         </div>
                     ))}
                 </div>

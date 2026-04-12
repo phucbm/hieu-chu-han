@@ -65,16 +65,20 @@ async function loadDictionary(): Promise<void> {
 
 // ── Entry → WordEntry conversion ──────────────────────────────────────────────
 
-function toWordEntry(e: DictEntry): WordEntry {
+function toWordEntry(e: DictEntry, depth = 0): WordEntry {
   let etymology: Etymology | undefined;
   if (e.etym) {
-    const components: EtymologyComponent[] = e.etym.components.map((c) => ({
-      char: c.char,
-      type: c.type === "meaning" ? "meaning" : c.type === "sound" ? "sound" : "unknown",
-      definition: c.def,
-      pinyin: c.p,
-      sinoVietnamese: c.sv,
-    }));
+    const components: EtymologyComponent[] = e.etym.components.map((c) => {
+      const compDict = depth < 1 ? simpMap.get(c.char) : undefined;
+      return {
+        char: c.char,
+        type: c.type === "meaning" ? "meaning" : c.type === "sound" ? "sound" : "unknown",
+        definition: c.def,
+        pinyin: c.p,
+        sinoVietnamese: c.sv,
+        entry: compDict ? toWordEntry(compDict, depth + 1) : undefined,
+      };
+    });
     etymology = { notes: e.etym.notes, components };
   }
 
@@ -83,6 +87,16 @@ function toWordEntry(e: DictEntry): WordEntry {
     movieWordRank: e.mwr,
     bookWordRank: e.bwr,
   };
+
+  const relatedWords = (e.tw ?? []).map((w) => {
+    const relDict = depth < 1 ? simpMap.get(w.word) : undefined;
+    return {
+      word: w.word,
+      trad: w.trad,
+      gloss: w.gloss,
+      entry: relDict ? toWordEntry(relDict, depth + 1) : undefined,
+    };
+  });
 
   return {
     simp: e.s,
@@ -94,7 +108,7 @@ function toWordEntry(e: DictEntry): WordEntry {
     definitionVi: e.vi,
     etymology,
     statistics,
-    relatedWords: e.tw ?? [],
+    relatedWords,
   };
 }
 
