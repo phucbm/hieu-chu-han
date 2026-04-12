@@ -29,8 +29,8 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
 
   return (
     <ul className="w-full divide-y divide-border rounded-lg border bg-card shadow-sm overflow-hidden">
-      {results.map((item) => (
-        <li key={item.simp}>
+      {results.map((item, i) => (
+        <li key={`${item.simp}-${item.pinyin}-${i}`}>
           <button
             type="button"
             onClick={() => onSelect(item)}

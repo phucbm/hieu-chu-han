@@ -199,8 +199,8 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               />
             ) : (
               <ul className="divide-y divide-border">
-                {suggestions.map((item) => (
-                  <li key={item.simp}>
+                {suggestions.map((item, i) => (
+                  <li key={`${item.simp}-${item.pinyin}-${i}`}>
                     <SuggestionItem
                       item={item}
                       onSelect={() => {
