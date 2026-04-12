@@ -38,6 +38,7 @@ export const metadata: Metadata = {
     title: "Hiểu Chữ Hán",
   },
   icons: {
+    icon: "/icon.png",
     apple: "/icons/apple-touch-icon.png",
   },
 };
