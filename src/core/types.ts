@@ -59,3 +59,23 @@ export interface WordEntry {
 
 // Search results array
 export type SearchResult = WordEntry[];
+
+// Lightweight summary used for suggestion dropdown and results list
+export interface WordSummary {
+  simp: string;
+  trad: string;
+  pinyin: string;
+  /** First Vietnamese meaning — Source: CVDICT */
+  vi: string;
+  /** First English definition — Source: chinese-lexicon */
+  en: string;
+}
+
+// A search history entry stored in localStorage
+export interface HistoryItem {
+  simp: string;
+  trad: string;
+  pinyin: string;
+  vi: string;
+  timestamp: number;
+}

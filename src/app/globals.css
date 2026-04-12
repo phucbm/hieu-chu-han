@@ -5,6 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Body serif font — Noto Serif (Latin/Vietnamese) */
+  --font-serif: var(--font-noto-serif), Georgia, serif;
+  /* Chinese display font — Noto Serif SC, falls back to Noto Serif */
+  --font-chinese: var(--font-noto-serif-sc), var(--font-noto-serif), "STSong", "SimSun", serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -122,9 +127,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
+    @apply bg-background text-foreground font-serif;
   }
 }

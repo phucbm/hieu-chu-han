@@ -25,10 +25,14 @@ export function isCompound(input: string): boolean {
 }
 
 /**
- * Split a compound Chinese word into its individual characters.
- * Non-CJK characters (e.g. punctuation) are ignored.
- * e.g. "疼痛" → ["疼", "痛"]
+ * Split a compound Chinese word into [fullWord, ...individualChars].
+ * The full word is always first so it renders as the first tab.
+ * Non-CJK characters (e.g. punctuation) are ignored from individual chars.
+ * e.g. "酸疼" → ["酸疼", "酸", "疼"]
+ * e.g. "疼" (single) → ["疼"]  (no duplication for single chars)
  */
 export function segmentWord(input: string): string[] {
-  return [...input].filter((ch) => CJK_CHAR.test(ch));
+  const chars = [...input].filter((ch) => CJK_CHAR.test(ch));
+  if (chars.length <= 1) return chars;
+  return [input, ...chars];
 }
