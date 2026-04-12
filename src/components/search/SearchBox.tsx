@@ -9,6 +9,9 @@
  * popover=true (mobile): results render inside a Base UI Popover anchored to
  *   the input. Opens on focus, closes on outside click / scroll / Escape —
  *   all handled natively by Base UI.
+ *
+ * Includes a handwriting button (PenLine icon) that opens HandwritingModal.
+ * Selecting a candidate from the modal calls onResultSelect directly.
  */
 
 import { useState, useRef } from "react";
@@ -16,6 +19,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { SearchInput } from "@/components/search/SearchInput";
 import { RecentSearch } from "@/components/search/RecentSearch";
 import { WordRow } from "@/components/search/WordRow";
+import { HandwritingModal } from "@/components/HandwritingModal";
 import type { WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
@@ -45,7 +49,13 @@ export function SearchBox({
   onEscape,
 }: SearchBoxProps) {
   const [focused, setFocused] = useState(false);
+  const [handwritingOpen, setHandwritingOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
+
+  /** Handwriting candidate selected → append to current query, let debounce handle search. */
+  const handleHandwritingSelect = (char: string) => {
+    onQueryChange(query + char);
+  };
 
   // ── Popover mode (mobile) ─────────────────────────────────────────────────
   if (popover) {
@@ -58,6 +68,7 @@ export function SearchBox({
             isLoading={isLoading}
             onFocus={() => setFocused(true)}
             onEscape={() => setFocused(false)}
+            onHandwriting={() => setHandwritingOpen(true)}
           />
         </div>
         <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
@@ -95,6 +106,12 @@ export function SearchBox({
             </PopoverPrimitive.Positioner>
           </PopoverPrimitive.Portal>
         </PopoverPrimitive.Root>
+
+        <HandwritingModal
+          open={handwritingOpen}
+          onOpenChange={setHandwritingOpen}
+          onSelect={handleHandwritingSelect}
+        />
       </div>
     );
   }
@@ -107,6 +124,7 @@ export function SearchBox({
         onChange={onQueryChange}
         isLoading={isLoading}
         onEscape={onEscape}
+        onHandwriting={() => setHandwritingOpen(true)}
       />
       <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
       {results.length > 0 && (
@@ -121,6 +139,12 @@ export function SearchBox({
           ))}
         </ul>
       )}
+
+      <HandwritingModal
+        open={handwritingOpen}
+        onOpenChange={setHandwritingOpen}
+        onSelect={handleHandwritingSelect}
+      />
     </div>
   );
 }

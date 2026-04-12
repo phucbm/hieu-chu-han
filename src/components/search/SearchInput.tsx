@@ -8,7 +8,7 @@
 
 import { forwardRef } from "react";
 import { Input } from "@/components/ui/input";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, PenLine } from "lucide-react";
 
 interface SearchInputProps {
   value: string;
@@ -18,6 +18,8 @@ interface SearchInputProps {
   /** Fired only when the <input> itself receives focus */
   onFocus?: () => void;
   placeholder?: string;
+  /** Opens the handwriting input modal */
+  onHandwriting?: () => void;
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
@@ -29,6 +31,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       onEscape,
       onFocus,
       placeholder = "Nhập chữ Hán, pinyin...",
+      onHandwriting,
     },
     ref
   ) {
@@ -47,7 +50,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             }
           }}
           placeholder={placeholder}
-          className="pr-8 text-base h-11"
+          className="pr-16 text-base h-11"
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -55,24 +58,41 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           aria-label="Tìm kiếm chữ Hán"
           disabled={isLoading}
         />
-        {/* Loading spinner */}
-        {isLoading && (
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-          </div>
-        )}
-        {/* Clear button */}
-        {!isLoading && value.length > 0 && (
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onChange("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Xóa"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+          {/* Loading spinner */}
+          {isLoading && (
+            <span className="text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </span>
+          )}
+
+          {/* Clear button */}
+          {!isLoading && value.length > 0 && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onChange("")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Xóa"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Handwriting input button */}
+          {onHandwriting && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onHandwriting}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Vẽ chữ Hán"
+            >
+              <PenLine className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
     );
   }
