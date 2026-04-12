@@ -22,7 +22,7 @@ export function AppLogo({ compact }: AppLogoProps) {
         Hiểu Chữ Hán
       </h1>
       <p className="text-xs text-muted-foreground">
-        Tra cứu · Hán Việt · Nét chữ · Tự nguyên
+        Tra cứu · Hán Việt · Nét chữ · Phân tích chữ
       </p>
     </div>
   );

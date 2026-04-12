@@ -5,8 +5,8 @@
  * Data sources: CVDICT (VI), chinese-lexicon (EN, HSK level, frequency ranks)
  */
 
-import { Badge } from "@/components/ui/badge";
-import type { WordEntry } from "@/core/types";
+import {Badge} from "@/components/ui/badge";
+import type {WordEntry} from "@/core/types";
 
 interface DefinitionSectionProps {
   entry: WordEntry;
@@ -46,16 +46,16 @@ export function DefinitionSection({ entry }: DefinitionSectionProps) {
               HSK {statistics.hskLevel}
             </Badge>
           )}
-          {statistics.movieWordRank && (
-            <Badge variant="outline" className="text-xs">
-              Phim: #{statistics.movieWordRank}
-            </Badge>
-          )}
-          {statistics.bookWordRank && (
-            <Badge variant="outline" className="text-xs">
-              Sách: #{statistics.bookWordRank}
-            </Badge>
-          )}
+            {/*{statistics.movieWordRank && (*/}
+            {/*  <Badge variant="outline" className="text-xs">*/}
+            {/*    Phim: #{statistics.movieWordRank}*/}
+            {/*  </Badge>*/}
+            {/*)}*/}
+            {/*{statistics.bookWordRank && (*/}
+            {/*  <Badge variant="outline" className="text-xs">*/}
+            {/*    Sách: #{statistics.bookWordRank}*/}
+            {/*  </Badge>*/}
+            {/*)}*/}
         </div>
       )}
 

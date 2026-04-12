@@ -51,7 +51,7 @@ export function WordRow({
         className="flex-1 flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors min-w-0"
       >
         {/* Large character anchor */}
-        <span className="font-chinese text-2xl font-medium w-9 shrink-0 text-center leading-none">
+        <span className="hidden font-chinese text-2xl font-medium w-9 shrink-0 text-center leading-none">
           {simp}
         </span>
 

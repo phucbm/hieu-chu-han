@@ -8,12 +8,17 @@
  * Data source: WordEntry from getWordEntries()
  */
 
-import { WordInfoBox } from "@/components/word/WordInfoBox";
-import { StrokeBox } from "@/components/word/StrokeBox";
-import { EtymologySection } from "@/components/word/EtymologySection";
-import { DefinitionSection } from "@/components/word/DefinitionSection";
-import { RelatedSection } from "@/components/word/RelatedSection";
-import type { WordEntry } from "@/core/types";
+import {WordInfoBox} from "@/components/word/WordInfoBox";
+import {StrokeBox} from "@/components/word/StrokeBox";
+import {EtymologySection} from "@/components/word/EtymologySection";
+import {DefinitionSection} from "@/components/word/DefinitionSection";
+import {RelatedSection} from "@/components/word/RelatedSection";
+import type {WordEntry} from "@/core/types";
+import {useState} from "react";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button";
+import {CopyShareButton} from "@/components/shared/CopyShareButton";
+import {Braces} from "lucide-react";
 
 interface WordTabContentProps {
   entry: WordEntry;
@@ -22,6 +27,7 @@ interface WordTabContentProps {
 
 export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
   const isSingleChar = [...entry.simp].length === 1;
+    const [debugOpen, setDebugOpen] = useState(false);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 py-4">
@@ -32,10 +38,47 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
       </div>
 
       {/* Right column — etymology, definitions, related */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 relative">
+          {/* Action buttons — top right */}
+          <div className="absolute top-0 right-0 flex items-center gap-0.5">
+              <CopyShareButton simp={entry.simp}/>
+              <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDebugOpen(true)}
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title="Xem dữ liệu thô"
+                  aria-label="Xem dữ liệu thô"
+              >
+                  <Braces className="h-3.5 w-3.5"/>
+              </Button>
+          </div>
+
+
+          {/* Debug dialog */}
+          <Dialog open={debugOpen} onOpenChange={setDebugOpen}>
+              <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+                  <DialogHeader>
+                      <DialogTitle className="font-chinese">
+                          Dữ liệu thô — {entry.simp}
+                      </DialogTitle>
+                      <DialogDescription>
+                          Nguồn: chinese-lexicon · CVDICT · Unihan kVietnamese
+                      </DialogDescription>
+                  </DialogHeader>
+                  <div className="overflow-y-auto flex-1 min-h-0">
+            <pre className="text-xs font-mono bg-muted rounded-md p-4 whitespace-pre-wrap break-words leading-relaxed">
+              {JSON.stringify(entry, null, 2)}
+            </pre>
+                  </div>
+              </DialogContent>
+          </Dialog>
+
         {isSingleChar && (
           <EtymologySection entry={entry} onWordClick={onWordClick} />
         )}
+
         <DefinitionSection entry={entry} />
         <RelatedSection entry={entry} onWordClick={onWordClick} />
       </div>

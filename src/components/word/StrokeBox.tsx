@@ -6,8 +6,10 @@
  * Data source: hanzi-writer (fetches stroke data from CDN)
  */
 
-import { useEffect, useRef, useId, useState } from "react";
-import { createStrokeWriter } from "@/core/stroke";
+import {useEffect, useId, useRef, useState} from "react";
+import {createStrokeWriter} from "@/core/stroke";
+import {RotateCcw} from "lucide-react";
+import {Button} from "@/components/ui/button";
 
 interface StrokeBoxProps {
   character: string;
@@ -35,23 +37,28 @@ export function StrokeBox({ character }: StrokeBoxProps) {
   if (!available) return null;
 
   return (
-    <div className="rounded-xl border bg-card p-4 flex flex-col items-center gap-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground self-start w-full">
+      <div className="rounded-xl bg-stone-100 p-4 flex flex-col items-center gap-3 relative">
+          <p className="text-sm text-muted-foreground mb-1 text-center">
         Nét chữ
       </p>
       <div
         id={elementId}
-        className="rounded-lg border bg-background"
+        className=""
         style={{ width: 200, height: 200 }}
         aria-label={`Hoạt ảnh nét chữ: ${character}`}
       />
-      <button
-        type="button"
-        onClick={() => writerRef.current?.animateCharacter()}
-        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-      >
-        Xem lại
-      </button>
+          <div className="absolute top-0 right-0 z-20 p-2">
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title="Xem lại"
+                  onClick={() => writerRef.current?.animateCharacter()}
+                  className="opacity-60 hover:opacity-100"
+              >
+                  <RotateCcw/>
+              </Button>
+          </div>
     </div>
   );
 }

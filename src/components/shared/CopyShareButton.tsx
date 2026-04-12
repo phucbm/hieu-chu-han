@@ -5,9 +5,9 @@
  * Shows a brief checkmark animation on success.
  */
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import {useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Check, Share} from "lucide-react";
 
 interface CopyShareButtonProps {
   simp: string;
@@ -40,7 +40,7 @@ export function CopyShareButton({ simp }: CopyShareButtonProps) {
       {copied ? (
         <Check className="h-3.5 w-3.5 text-green-500" />
       ) : (
-        <Copy className="h-3.5 w-3.5" />
+          <Share className="h-3.5 w-3.5"/>
       )}
     </Button>
   );
