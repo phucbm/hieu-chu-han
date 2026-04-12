@@ -34,7 +34,7 @@ export function AppSidebar({
   onRecentSearchSelect,
 }: AppSidebarProps) {
   return (
-    <aside className="hidden lg:flex fixed left-0 top-0 w-80 h-screen z-30 flex-col border-r bg-background">
+    <aside className="hidden lg:flex flex-col border-r bg-background max-h-screen">
       {/* Logo — pinned at top */}
       <div className="px-5 py-5 border-b shrink-0">
         <AppLogo />

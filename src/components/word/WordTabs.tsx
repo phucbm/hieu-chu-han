@@ -35,7 +35,7 @@ export function WordTabs({ entries, onWordClick }: WordTabsProps) {
           <TabsTrigger
             key={`${entry.simp}-${i}`}
             value={entry.simp}
-            className="flex-1 text-xl font-chinese font-medium min-w-[3rem] py-1"
+            className="flex-1 text-xl font-chinese font-medium min-w-[3rem] py10"
           >
             {entry.simp}
           </TabsTrigger>

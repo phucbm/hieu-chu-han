@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * RecentViewedPanel — Fixed right column for desktop (≥1024px).
+ * RecentViewedPanel — Right column for desktop (≥1024px).
+ * Sticky header + scrollable word list below.
  */
 
 import { ViewedWordList } from "@/components/layout/ViewedWordList";
@@ -19,15 +20,20 @@ export function RecentViewedPanel({
   onRemove,
 }: RecentViewedPanelProps) {
   return (
-    <aside className="hidden lg:flex fixed right-0 top-0 w-72 h-screen z-30 flex-col border-l bg-background">
+    <aside className="hidden lg:flex flex-col border-l bg-background max-h-screen">
+      {/* Sticky header */}
       <div className="px-5 py-5 border-b shrink-0">
         <p className="font-semibold text-sm">Đã xem</p>
       </div>
-      <ViewedWordList
-        viewedWords={viewedWords}
-        onSelect={onSelect}
-        onRemove={onRemove}
-      />
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto min-h-0 p-5">
+        <ViewedWordList
+          viewedWords={viewedWords}
+          onSelect={onSelect}
+          onRemove={onRemove}
+        />
+      </div>
     </aside>
   );
 }

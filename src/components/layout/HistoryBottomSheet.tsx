@@ -62,14 +62,16 @@ export function HistoryBottomSheet({
           </Button>
         </div>
 
-        <ViewedWordList
-          viewedWords={viewedWords}
-          onSelect={(simp) => {
-            onClose();
-            onSelect(simp);
-          }}
-          onRemove={onRemove}
-        />
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <ViewedWordList
+            viewedWords={viewedWords}
+            onSelect={(simp) => {
+              onClose();
+              onSelect(simp);
+            }}
+            onRemove={onRemove}
+          />
+        </div>
       </div>
     </>
   );

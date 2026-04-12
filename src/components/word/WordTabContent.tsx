@@ -32,13 +32,13 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 py-4">
       {/* Left column — sticky on desktop */}
-      <div className="flex flex-col gap-4 lg:sticky lg:top-14 lg:self-start">
+      <div className="flex flex-col gap-4 min-w-0 lg:sticky lg:top-0 lg:self-start">
         <WordInfoBox entry={entry} />
         {isSingleChar && <StrokeBox character={entry.simp} />}
       </div>
 
       {/* Right column — etymology, definitions, related */}
-      <div className="flex flex-col gap-6 relative">
+      <div className="flex flex-col gap-6 relative min-w-0">
           {/* Action buttons — top right */}
           <div className="absolute top-0 right-0 flex items-center gap-0.5">
               <CopyShareButton simp={entry.simp}/>
