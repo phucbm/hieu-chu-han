@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * HistoryBottomSheet — Mobile-only bottom sheet for viewed word history.
- * Opens from the bottom with a backdrop. Shows all viewed words as WordBadges.
- * Data source: useViewedWords hook (hch_viewed_words localStorage)
+ * HistorySheet — Mobile-only right-side sheet for viewed word history.
+ * Slides in from the right with a backdrop.
  */
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { WordBadge } from "@/components/shared/WordBadge";
 import { X } from "lucide-react";
+import { ViewedWordList } from "@/components/layout/ViewedWordList";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface HistoryBottomSheetProps {
@@ -17,6 +15,7 @@ interface HistoryBottomSheetProps {
   onClose: () => void;
   viewedWords: ViewedWord[];
   onSelect: (simp: string) => void;
+  onRemove: (simp: string) => void;
 }
 
 export function HistoryBottomSheet({
@@ -24,6 +23,7 @@ export function HistoryBottomSheet({
   onClose,
   viewedWords,
   onSelect,
+  onRemove,
 }: HistoryBottomSheetProps) {
   return (
     <>
@@ -38,24 +38,19 @@ export function HistoryBottomSheet({
         aria-hidden="true"
       />
 
-      {/* Sheet */}
+      {/* Sheet — slides from right */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background border-t
-                    rounded-t-2xl max-h-[70vh] transition-transform duration-300 ease-out ${
-          open ? "translate-y-0" : "translate-y-full"
+        className={`fixed inset-y-0 right-0 z-50 flex flex-col w-72 bg-background border-l
+                    transition-transform duration-300 ease-out ${
+          open ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
         aria-modal="true"
         aria-label="Lịch sử xem"
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-border" />
-        </div>
-
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
-          <p className="font-semibold">Đã xem</p>
+        <div className="flex items-center justify-between px-5 py-5 border-b shrink-0">
+          <p className="font-semibold text-sm">Đã xem</p>
           <Button
             type="button"
             variant="ghost"
@@ -67,28 +62,14 @@ export function HistoryBottomSheet({
           </Button>
         </div>
 
-        {/* Content */}
-        {viewedWords.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-10">
-            Chưa có từ nào được xem.
-          </p>
-        ) : (
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="flex flex-wrap gap-2 p-4">
-              {viewedWords.map((w) => (
-                <WordBadge
-                  key={w.simp}
-                  simp={w.simp}
-                  pinyin={w.pinyin}
-                  onClick={() => {
-                    onClose();
-                    onSelect(w.simp);
-                  }}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+        <ViewedWordList
+          viewedWords={viewedWords}
+          onSelect={(simp) => {
+            onClose();
+            onSelect(simp);
+          }}
+          onRemove={onRemove}
+        />
       </div>
     </>
   );

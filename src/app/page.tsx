@@ -240,10 +240,8 @@ export default function HomePage() {
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
         viewedWords={viewedWords}
-        onSelect={(simp) => {
-          setHistoryOpen(false);
-          openWord(simp);
-        }}
+        onSelect={openWord}
+        onRemove={removeViewedWord}
       />
     </div>
   );
