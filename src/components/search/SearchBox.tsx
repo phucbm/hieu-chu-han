@@ -3,13 +3,14 @@
 /**
  * SearchBox — Unified search component: input + recent searches + results list.
  *
- * Results render inline below the input and collapse on: result click, input
- * blur, or Escape. On mobile the list is max 300 px tall and scrolls inside.
+ * collapsible=false (desktop): results/message always visible when query is
+ *   non-empty and handwriting is closed.
  *
- * Handwriting panel is an inline collapsible below the input row. It is
- * mutually exclusive with the results list — they are never visible at the
- * same time. Toggle with the pen button; the recognizer lifecycle is tied to
- * open/close.
+ * collapsible=true (mobile): results/message only shown when the input is
+ *   focused. Collapses on blur, result click, or Escape.
+ *
+ * Handwriting panel is an inline collapsible, mutually exclusive with the
+ * results area on both breakpoints.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -22,6 +23,8 @@ import { wordKey, type WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface SearchBoxProps {
+  /** On mobile: collapse results until input is focused. Default: false. */
+  collapsible?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   results: WordEntry[];
@@ -34,6 +37,7 @@ interface SearchBoxProps {
 }
 
 export function SearchBox({
+  collapsible = false,
   query,
   onQueryChange,
   results,
@@ -50,8 +54,6 @@ export function SearchBox({
   const [padKey, setPadKey] = useState(0);
   const recognizer = useRef<HandwritingRecognizer | null>(null);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resultsOpen = focused && results.length > 0 && !handwritingOpen;
 
   // ── Recognizer lifecycle ───────────────────────────────────────────────────
   useEffect(() => {
@@ -125,18 +127,22 @@ export function SearchBox({
 
       <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
 
-      {/* ── Results list ────────────────────────────────────────────────── */}
-      {resultsOpen && (
-        <ul className="divide-y divide-border rounded-lg border shrink-0 max-h-[300px] lg:max-h-none overflow-y-auto">
-          {results.map((item, i) => (
-            <li key={`${item.simp}-${item.pinyin}-${i}`}>
-              <WordRow
-                entry={item}
-                onSelect={() => handleResultSelect(item)}
-              />
-            </li>
-          ))}
-        </ul>
+      {/* ── Results list / no-match message ────────────────────────────── */}
+      {(!collapsible || focused) && !handwritingOpen && query.length > 0 && !isLoading && (
+        results.length > 0 ? (
+          <ul className="divide-y divide-border rounded-lg border shrink-0 max-h-[300px] lg:max-h-none overflow-y-auto">
+            {results.map((item, i) => (
+              <li key={`${item.simp}-${item.pinyin}-${i}`}>
+                <WordRow
+                  entry={item}
+                  onSelect={() => handleResultSelect(item)}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground px-1">Không tìm thấy kết quả phù hợp</p>
+        )
       )}
 
       {/* ── Handwriting panel ───────────────────────────────────────────── */}

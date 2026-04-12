@@ -54,6 +54,7 @@ export default function HomePage() {
 
     // Selected word detail
     const [selectedEntries, setSelectedEntries] = useState<WordEntry[]>([]);
+    const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
 
     // Mobile history sheet
     const [historyOpen, setHistoryOpen] = useState(false);
@@ -79,13 +80,15 @@ export default function HomePage() {
 
     // ── openWord — single shared handler for all word navigation ─────────────
     const openWord = useCallback(
-        (simp: string) => {
+        (simp: string, preferredTab?: string) => {
             if (!simp.trim()) return;
             setQuery(simp);
             startDetailTransition(async () => {
                 const entries = await getWordEntries(simp);
                 setSelectedEntries(entries);
                 if (entries[0]) {
+                    const tab = preferredTab ?? wordKey(entries[0]);
+                    setActiveTab(tab);
                     addViewedWord({
                         simp: wordKey(entries[0]),
                         trad: entries[0].trad,
@@ -93,17 +96,29 @@ export default function HomePage() {
                         sinoViet: entries[0].sinoVietnamese || undefined,
                         entry: entries[0],
                     });
-                    // Update URL without triggering a navigation
-                    window.history.replaceState(
-                        null,
-                        "",
-                        `?word=${encodeURIComponent(wordKey(entries[0]))}`
-                    );
+                    const wordParam = wordKey(entries[0]);
+                    const url = tab === wordParam
+                        ? `?word=${encodeURIComponent(wordParam)}`
+                        : `?word=${encodeURIComponent(wordParam)}&active=${encodeURIComponent(tab)}`;
+                    window.history.replaceState(null, "", url);
                 }
             });
         },
         [addViewedWord]
     );
+
+    // ── Tab change ───────────────────────────────────────────────────────────
+    const handleTabChange = useCallback((tab: string) => {
+        setActiveTab(tab);
+        const params = new URLSearchParams(window.location.search);
+        const word = params.get("word");
+        if (tab === word) {
+            params.delete("active");
+        } else {
+            params.set("active", tab);
+        }
+        window.history.replaceState(null, "", `?${params.toString()}`);
+    }, []);
 
     // Keep a stable ref so the mount effect can call the latest openWord
     const openWordRef = useRef(openWord);
@@ -113,7 +128,8 @@ export default function HomePage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const word = params.get("word");
-        if (word) openWordRef.current(word);
+        const active = params.get("active") ?? undefined;
+        if (word) openWordRef.current(word, active);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Handlers ─────────────────────────────────────────────────────────────
@@ -126,6 +142,16 @@ export default function HomePage() {
         setQuery((prev) => prev + simp);
     }, []);
 
+    // ── Auto-open when search returns no results ─────────────────────────────
+    // Only fires for multi-CJK queries (e.g. "的办") — avoids Latin/pinyin noise.
+    useEffect(() => {
+        const cjkChars = (debouncedQuery.match(/[\u4e00-\u9fff]/g) || []).length;
+        if (!isSuggestPending && results.length === 0 && cjkChars >= 2) {
+            openWord(debouncedQuery);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSuggestPending, debouncedQuery, results.length]);
+
     // ── Detail content ───────────────────────────────────────────────────────
     const detailContent = isDetailPending ? (
         <div className="flex flex-col gap-4 py-4">
@@ -133,7 +159,7 @@ export default function HomePage() {
             <Skeleton className="h-52 w-full rounded-xl"/>
         </div>
     ) : selectedEntries.length > 0 ? (
-        <WordTabs entries={selectedEntries} onWordClick={openWord}/>
+        <WordTabs entries={selectedEntries} onWordClick={openWord} activeTab={activeTab} onTabChange={handleTabChange}/>
     ) : null;
 
     // ── Render ───────────────────────────────────────────────────────────────
@@ -158,6 +184,7 @@ export default function HomePage() {
                 {/* Row 2: sticky below header */}
                 <div className="sticky top-14 z-20 bg-background border-b px-4 py-3">
                     <SearchBox
+                        collapsible
                         query={query}
                         onQueryChange={setQuery}
                         results={results}

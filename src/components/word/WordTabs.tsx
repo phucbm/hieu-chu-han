@@ -14,9 +14,11 @@ import { wordKey, type WordEntry } from "@/core/types";
 interface WordTabsProps {
   entries: WordEntry[];
   onWordClick: (simp: string) => void;
+  activeTab?: string;
+  onTabChange?: (value: string) => void;
 }
 
-export function WordTabs({ entries, onWordClick }: WordTabsProps) {
+export function WordTabs({ entries, onWordClick, activeTab, onTabChange }: WordTabsProps) {
   if (entries.length === 0) return null;
 
   // Deduplicate by lookup key — e.g. 一生一世 may produce two 一 entries from segmentation
@@ -29,7 +31,11 @@ export function WordTabs({ entries, onWordClick }: WordTabsProps) {
   }
 
   return (
-    <Tabs defaultValue={wordKey(unique[0])} className="w-full">
+    <Tabs
+      value={activeTab ?? wordKey(unique[0])}
+      onValueChange={onTabChange}
+      className="w-full"
+    >
       <div className="sticky top-0 z-20 bg-background">
         <TabsList className="w-full overflow-x-auto h-auto gap-1 p-1 flex flex-nowrap justify-start">
           {unique.map((entry, i) => (
