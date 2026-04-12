@@ -1,6 +1,6 @@
 # Hiểu Chữ Hán
 
-**Từ điển Hán Việt** — a Chinese–Vietnamese dictionary PWA.
+Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.
 
 Live: **[hieuchuhan.vercel.app](https://hieuchuhan.vercel.app)**
 

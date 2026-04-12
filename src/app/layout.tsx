@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   applicationName: "Hiểu Chữ Hán",
   title: `Hiểu Chữ Hán v${pkg.version} — Từ điển Hán Việt`,
   description:
-    "Tra cứu chữ Hán nhanh chóng: nghĩa tiếng Việt, cách đọc Hán Việt, hoạt ảnh nét chữ, phân tích tự nguyên.",
+    "Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

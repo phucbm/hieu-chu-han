@@ -6,7 +6,7 @@ Quick reference for anyone starting on this codebase.
 
 ## What the app does
 
-A Chinese–Vietnamese dictionary PWA. The user types a Chinese word or pinyin; the app returns:
+Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ. The user types a Chinese word or pinyin; the app returns:
 - Vietnamese meaning (from CVDICT)
 - Sino-Vietnamese reading (from Unicode Unihan kVietnamese)
 - English definitions, HSK level, frequency stats (from chinese-lexicon / CC-CEDICT)
