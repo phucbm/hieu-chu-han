@@ -111,8 +111,10 @@ export interface DictEntry {
 }
 
 /** Convert a makemeahanzi etymology to our etym format. */
-function mmEtymToEtym(etym: MakemeahanziEtym): DictEntry["etym"] {
-  const components: DictEntry["etym"]["components"] = [];
+type EtymEntry = NonNullable<DictEntry["etym"]>;
+
+function mmEtymToEtym(etym: MakemeahanziEtym): EtymEntry {
+  const components: EtymEntry["components"] = [];
   if (etym.semantic) {
     components.push({ char: etym.semantic, type: "meaning", def: "", p: "", sv: getSinoViet(etym.semantic) });
   }

@@ -166,7 +166,13 @@ function runSearch(term: string, limit: number): WordEntry[] {
         )
     )
     .map((e) => ({ e, rel: calcRelevance(e, t) }))
-    .sort((a, b) => b.e.b * b.rel - a.e.b * a.rel)
+    .sort((a, b) => {
+      // Exact simp match gets a large fixed bonus so simp-simp and trad-trad
+      // always beat cross-form matches regardless of boost score.
+      const aScore = a.e.b * a.rel + (a.e.s === t ? 10000 : 0);
+      const bScore = b.e.b * b.rel + (b.e.s === t ? 10000 : 0);
+      return bScore - aScore;
+    })
     .slice(0, limit)
     .map(({ e }) => toWordEntry(e));
 }
