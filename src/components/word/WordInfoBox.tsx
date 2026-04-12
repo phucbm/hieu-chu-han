@@ -16,10 +16,12 @@ interface WordInfoBoxProps {
 
 export function WordInfoBox({ entry }: WordInfoBoxProps) {
     const showTrad = entry.trad && entry.trad !== entry.simp;
+    const isMultiChar = [...entry.simp].length > 1;
+    const displaySino = isMultiChar ? entry.inferredSinoVietnamese : entry.sinoVietnamese;
 
   return (
     <>
-      <div className="relative rounded-xl bg-stone-100 p-5">
+      <div className="relative w-full rounded-xl bg-stone-100 p-5">
 
         {/* Giản thể / Phồn thể */}
           <div className="flex flex-wrap justify-evenly gap-3 mb-5">
@@ -27,7 +29,7 @@ export function WordInfoBox({ entry }: WordInfoBoxProps) {
                   <span className="text-sm text-muted-foreground mb-1 text-center">
                       Giản thể
                   </span>
-                  <span className="simp font-chinese text-6xl font-bold leading-none select-all text-nowrap">
+                  <span className="simp font-chinese text-8xl font-bold leading-none select-all">
                 {entry.simp}
               </span>
               </div>
@@ -35,7 +37,7 @@ export function WordInfoBox({ entry }: WordInfoBoxProps) {
                   <div className="flex flex-col justify-center items-center">
                       <span className="text-sm text-muted-foreground mb-1 text-center">Phồn thể</span>
                       <span
-                          className="simp font-chinese text-6xl font-bold leading-none select-all text-nowrap text-green-500">
+                          className="simp font-chinese text-8xl font-bold leading-none select-all text-green-500">
                 {entry.trad}
               </span>
                   </div>
@@ -48,12 +50,12 @@ export function WordInfoBox({ entry }: WordInfoBoxProps) {
         </p>
           <div className="flex items-baseline justify-center gap-3 text-center">
           <span className="text-xl text-muted-foreground">{entry.pinyin}</span>
-          {entry.sinoVietnamese ? (
-            <span className="text-xl font-medium text-primary">
-              {entry.sinoVietnamese}
+          {displaySino ? (
+            <span className={`text-xl font-medium ${isMultiChar ? "text-primary/60 italic" : "text-primary"}`}>
+              {displaySino}
             </span>
           ) : (
-            <span className="text-sm text-muted-foreground italic">—</span>
+            <span className="text-sm text-muted-foreground italic font-chinese">[{entry.simp}]</span>
           )}
         </div>
       </div>

@@ -30,17 +30,19 @@ export function WordTabs({ entries, onWordClick }: WordTabsProps) {
 
   return (
     <Tabs defaultValue={unique[0].simp} className="w-full">
-      <TabsList className="w-full flex-wrap h-auto gap-1 p-1 sticky top-0 z-20">
-        {unique.map((entry, i) => (
-          <TabsTrigger
-            key={`${entry.simp}-${i}`}
-            value={entry.simp}
-            className="flex-1 text-xl font-chinese font-medium min-w-[3rem] py10"
-          >
-            {entry.simp}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <div className="sticky top-0 z-20 bg-background">
+        <TabsList className="w-full overflow-x-auto h-auto gap-1 p-1 flex flex-nowrap justify-start">
+          {unique.map((entry, i) => (
+            <TabsTrigger
+              key={`${entry.simp}-${i}`}
+              value={entry.simp}
+              className="shrink-0 text-xl font-chinese font-medium w-auto"
+            >
+              {entry.simp}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
       {unique.map((entry, i) => (
         <TabsContent key={`${entry.simp}-${i}`} value={entry.simp}>
           <WordTabContent entry={entry} onWordClick={onWordClick} />

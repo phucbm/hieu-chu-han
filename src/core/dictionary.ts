@@ -15,6 +15,7 @@ import {
 } from "chinese-lexicon";
 import cvdictRaw from "../data/cvdict.json";
 import kVietnameseRaw from "../data/kVietnamese.json";
+import sinoVietOverridesRaw from "../data/sinoViet-overrides.json";
 import type { WordEntry, EtymologyComponent, Etymology } from "./types";
 
 // Source: cvdict.json (parsed from CVDICT.u8 by ph0ngp)
@@ -26,6 +27,7 @@ const cvdict = cvdictRaw as CVDictMap;
 // Keys are actual Chinese characters; values are arrays of Sino-Vietnamese readings.
 type KVietnameseMap = Record<string, string[]>;
 const kVietnamese = kVietnameseRaw as unknown as KVietnameseMap;
+const sinoVietOverrides = sinoVietOverridesRaw as unknown as KVietnameseMap;
 
 /**
  * Look up Sino-Vietnamese reading from kVietnamese (Unihan database).
@@ -33,10 +35,14 @@ const kVietnamese = kVietnameseRaw as unknown as KVietnameseMap;
  * Returns space-separated readings joined by " / " if multiple, or empty string.
  * Source: kVietnamese.json
  */
-function getSinoVietnamese(input: string): string {
-  // For compound words look up first character only
-  const char = [...input][0] ?? "";
-  const readings = kVietnamese[char];
+function getSinoVietnamese(simp: string, trad?: string): string {
+  const simpChar = [...simp][0] ?? "";
+  const tradChar = trad ? ([...trad][0] ?? "") : "";
+  const readings =
+    (kVietnamese[simpChar]?.length ? kVietnamese[simpChar] : undefined) ??
+    (tradChar && tradChar !== simpChar ? kVietnamese[tradChar] : undefined) ??
+    sinoVietOverrides[simpChar] ??
+    (tradChar && tradChar !== simpChar ? sinoVietOverrides[tradChar] : undefined);
   if (!readings || readings.length === 0) return "";
   return readings.join(" / ");
 }
@@ -70,7 +76,7 @@ function buildEtymology(
             : "unknown",
       definition: c.definition,
       pinyin: c.pinyin,
-      sinoVietnamese: getSinoVietnamese(c.char),
+      sinoVietnamese: getSinoVietnamese(c.char, compEntries[0]?.trad),
       entry: compEntries[0] ? enrichEntry(compEntries[0], depth + 1) : undefined,
     };
   });
@@ -86,7 +92,17 @@ function buildEtymology(
  * depth guards against infinite recursion when entries reference each other.
  */
 function enrichEntry(raw: LexiconEntry, depth = 0): WordEntry {
-  const sinoVietnamese = getSinoVietnamese(raw.simp);
+  const sinoVietnamese = getSinoVietnamese(raw.simp, raw.trad);
+  const chars = [...raw.simp];
+  const inferredSinoVietnamese =
+    depth === 0 && chars.length > 1
+      ? chars
+          .map((c) => {
+            const trad = getEntries(c)[0]?.trad;
+            return getSinoVietnamese(c, trad) || `[${c}]`;
+          })
+          .join(" ")
+      : "";
   const definitionVi = getVietnameseMeaning(raw.simp);
   const etymology = raw.simpEtymology
     ? buildEtymology(raw.simpEtymology, depth)
@@ -112,6 +128,7 @@ function enrichEntry(raw: LexiconEntry, depth = 0): WordEntry {
     pinyin: raw.pinyin,
     pinyinTones: raw.pinyinTones,
     sinoVietnamese,
+    inferredSinoVietnamese,
     definitionsEn: raw.definitions,
     definitionVi,
     etymology,

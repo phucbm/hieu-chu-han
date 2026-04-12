@@ -47,6 +47,8 @@ export interface WordEntry {
   pinyinTones: string;
   /** Sino-Vietnamese reading from kVietnamese (Unihan) */
   sinoVietnamese: string;
+  /** Sino-Vietnamese inferred by joining each character's sinoVietnamese (multi-char words only) */
+  inferredSinoVietnamese: string;
   /** English definitions — Source: chinese-lexicon */
   definitionsEn: string[];
   /** Vietnamese meaning — Source: CVDICT */

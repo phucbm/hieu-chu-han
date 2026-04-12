@@ -21,67 +21,67 @@ import {CopyShareButton} from "@/components/shared/CopyShareButton";
 import {Braces} from "lucide-react";
 
 interface WordTabContentProps {
-  entry: WordEntry;
-  onWordClick: (simp: string) => void;
+    entry: WordEntry;
+    onWordClick: (simp: string) => void;
 }
 
 export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
-  const isSingleChar = [...entry.simp].length === 1;
+    const isSingleChar = [...entry.simp].length === 1 && /\p{Script=Han}/u.test(entry.simp);
     const [debugOpen, setDebugOpen] = useState(false);
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 py-4">
-      {/* Left column — sticky on desktop */}
-      <div className="flex flex-col gap-4 min-w-0 lg:sticky lg:top-0 lg:self-start">
-        <WordInfoBox entry={entry} />
-        {isSingleChar && <StrokeBox character={entry.simp} />}
-      </div>
+    return (
+        <div className="">
+            {/* etymology, definitions, related */}
+            <div className="flex flex-col gap-6 relative w-full">
 
-      {/* Right column — etymology, definitions, related */}
-      <div className="flex flex-col gap-6 relative min-w-0">
-          {/* Action buttons — top right */}
-          <div className="absolute top-0 right-0 flex items-center gap-0.5">
-              <CopyShareButton simp={entry.simp}/>
-              <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDebugOpen(true)}
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  title="Xem dữ liệu thô"
-                  aria-label="Xem dữ liệu thô"
-              >
-                  <Braces className="h-3.5 w-3.5"/>
-              </Button>
-          </div>
+                {/* Action buttons — top right */}
+                <div className="flex justify-end items-center gap-0.5">
+                    <CopyShareButton simp={entry.simp}/>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDebugOpen(true)}
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="Xem dữ liệu thô"
+                        aria-label="Xem dữ liệu thô"
+                    >
+                        <Braces className="h-3.5 w-3.5"/>
+                    </Button>
+                </div>
+
+                <div className="grid gap-4" style={{ gridTemplateColumns: isSingleChar ? "1fr 1fr" : "1fr" }}>
+                    <WordInfoBox entry={entry}/>
+                    {isSingleChar && <StrokeBox simp={entry.simp} trad={entry.trad}/>}
+                </div>
 
 
-          {/* Debug dialog */}
-          <Dialog open={debugOpen} onOpenChange={setDebugOpen}>
-              <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-                  <DialogHeader>
-                      <DialogTitle className="font-chinese">
-                          Dữ liệu thô — {entry.simp}
-                      </DialogTitle>
-                      <DialogDescription>
-                          Nguồn: chinese-lexicon · CVDICT · Unihan kVietnamese
-                      </DialogDescription>
-                  </DialogHeader>
-                  <div className="overflow-y-auto flex-1 min-h-0">
+                {/* Debug dialog */}
+                <Dialog open={debugOpen} onOpenChange={setDebugOpen}>
+                    <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle className="font-chinese">
+                                Dữ liệu thô — {entry.simp}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Nguồn: chinese-lexicon · CVDICT · Unihan kVietnamese
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="overflow-y-auto flex-1 min-h-0">
             <pre className="text-xs font-mono bg-muted rounded-md p-4 whitespace-pre-wrap break-words leading-relaxed">
               {JSON.stringify(entry, null, 2)}
             </pre>
-                  </div>
-              </DialogContent>
-          </Dialog>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
-        {isSingleChar && (
-          <EtymologySection entry={entry} onWordClick={onWordClick} />
-        )}
+                {isSingleChar && (
+                    <EtymologySection entry={entry} onWordClick={onWordClick}/>
+                )}
 
-        <DefinitionSection entry={entry} />
-        <RelatedSection entry={entry} onWordClick={onWordClick} />
-      </div>
-    </div>
-  );
+                <DefinitionSection entry={entry}/>
+                <RelatedSection entry={entry} onWordClick={onWordClick}/>
+            </div>
+        </div>
+    );
 }

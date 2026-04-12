@@ -10,8 +10,8 @@ import HanziWriter from "hanzi-writer";
 
 /** Default stroke animation configuration */
 export const STROKE_CONFIG = {
-  width: 200,
-  height: 200,
+  width: 140,
+  height: 140,
   padding: 5,
   showOutline: true,
   strokeColor: "#1a1a1a",
@@ -22,7 +22,9 @@ export const STROKE_CONFIG = {
   radicalColor: "#ef4444",
 } as const;
 
-export type StrokeConfig = Partial<typeof STROKE_CONFIG>;
+export type StrokeConfig = Partial<typeof STROKE_CONFIG> & {
+  onLoadCharDataError?: () => void;
+};
 
 /**
  * Create a HanziWriter instance attached to a DOM element by ID.

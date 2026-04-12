@@ -98,12 +98,25 @@ function toWordEntry(e: DictEntry, depth = 0): WordEntry {
     };
   });
 
+  const chars = [...e.s];
+  const inferredSinoVietnamese =
+    depth === 0 && chars.length > 1
+      ? chars
+          .map((c) => {
+            const entry = simpMap.get(c);
+            const sv = entry?.sv || (entry?.t && entry.t !== c ? simpMap.get(entry.t)?.sv : "");
+            return sv || `[${c}]`;
+          })
+          .join(" ")
+      : "";
+
   return {
     simp: e.s,
     trad: e.t,
     pinyin: e.p,
     pinyinTones: e.pt,
     sinoVietnamese: e.sv,
+    inferredSinoVietnamese,
     definitionsEn: e.en,
     definitionVi: e.vi,
     etymology,
@@ -135,16 +148,22 @@ function calcRelevance(e: DictEntry, term: string): number {
   return relevance;
 }
 
+function isPlaceholder(e: DictEntry): boolean {
+  return e.p === "xx";
+}
+
 function runSearch(term: string, limit: number): WordEntry[] {
   const t = term.toLowerCase();
   return entries
     .filter(
       (e) =>
-        isSubstringMatch(e.s, t) ||
-        isSubstringMatch(e.t, t) ||
-        isSubstringMatch(e.sp, t) ||
-        isSubstringMatch(e.pt, t) ||
-        isSubstringMatch(e.p.toLowerCase(), t)
+        !isPlaceholder(e) && (
+          isSubstringMatch(e.s, t) ||
+          isSubstringMatch(e.t, t) ||
+          isSubstringMatch(e.sp, t) ||
+          isSubstringMatch(e.pt, t) ||
+          isSubstringMatch(e.p.toLowerCase(), t)
+        )
     )
     .map((e) => ({ e, rel: calcRelevance(e, t) }))
     .sort((a, b) => b.e.b * b.rel - a.e.b * a.rel)
@@ -164,5 +183,5 @@ export async function lookupWord(input: string): Promise<WordEntry[]> {
 export async function getWordDetail(simp: string): Promise<WordEntry | null> {
   await loadDictionary();
   const e = simpMap.get(simp.trim());
-  return e ? toWordEntry(e) : null;
+  return e && !isPlaceholder(e) ? toWordEntry(e) : null;
 }

@@ -46,7 +46,7 @@ export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) 
         {/* Text info */}
         <span className="flex flex-col min-w-0 flex-1">
           {/* Row 1: simp + optional trad */}
-          <span className="flex items-baseline gap-1.5 leading-tight">
+          <span className="flex flex-wrap items-baseline gap-x-1.5 leading-tight">
             <span className="font-chinese font-medium text-sm">{simp}</span>
             {showTrad && (
               <span className="font-chinese text-xs text-muted-foreground">

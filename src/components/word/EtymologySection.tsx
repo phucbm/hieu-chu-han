@@ -40,7 +40,7 @@ export function EtymologySection({ entry, onWordClick }: EtymologySectionProps) 
                                         entry={comp.entry}
                                         onClick={() => onWordClick(comp.char)}
                                     />
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="hidden text-xs text-muted-foreground">
                                     {comp.type === "meaning" ? "(nghĩa)" : "(âm)"}
                                   </span>
                                 </div>

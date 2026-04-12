@@ -31,11 +31,23 @@ const kVietnamese: Record<string, string[]> = JSON.parse(
   )
 );
 
+const sinoVietOverrides: Record<string, string[]> = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, "../src/data/sinoViet-overrides.json"),
+    "utf-8"
+  )
+);
+
 const OUTPUT = path.join(__dirname, "../public/data/dictionary.json");
 
-function getSinoViet(simp: string): string {
-  const char = [...simp][0] ?? "";
-  const readings = kVietnamese[char];
+function getSinoViet(simp: string, trad?: string): string {
+  const simpChar = [...simp][0] ?? "";
+  const tradChar = trad ? ([...trad][0] ?? "") : "";
+  const readings =
+    kVietnamese[simpChar] ??
+    (tradChar && tradChar !== simpChar ? kVietnamese[tradChar] : undefined) ??
+    sinoVietOverrides[simpChar] ??
+    (tradChar && tradChar !== simpChar ? sinoVietOverrides[tradChar] : undefined);
   return readings?.join(" / ") ?? "";
 }
 
@@ -76,7 +88,7 @@ function convertEntry(raw: any): DictEntry {
     sp: raw.searchablePinyin ?? "",
     b: Math.round((raw.boost ?? 0) * 10) / 10,
     vi: cvdict[raw.simp]?.vi ?? "",
-    sv: getSinoViet(raw.simp),
+    sv: getSinoViet(raw.simp, raw.trad),
     en: raw.definitions ?? [],
   };
 
@@ -94,12 +106,12 @@ function convertEntry(raw: any): DictEntry {
     entry.etym = {
       notes: raw.simpEtymology.notes ?? "",
       components: (raw.simpEtymology.components ?? []).map(
-        (c: { char: string; type: string; definition: string; pinyin: string }) => ({
+        (c: { char: string; trad?: string; type: string; definition: string; pinyin: string }) => ({
           char: c.char,
           type: c.type,
           def: c.definition ?? "",
           p: c.pinyin ?? "",
-          sv: getSinoViet(c.char),
+          sv: getSinoViet(c.char, c.trad),
         })
       ),
     };
