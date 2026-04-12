@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Serif, Noto_Serif_SC } from "next/font/google";
 import { SwAutoUpdate } from "@/components/SwAutoUpdate";
+import pkg from "../../package.json";
 import "./globals.css";
 
 /**
@@ -29,7 +30,7 @@ const notoSerifSC = Noto_Serif_SC({
 
 export const metadata: Metadata = {
   applicationName: "Hiểu Chữ Hán",
-  title: "Hiểu Chữ Hán — Từ điển Hán Việt",
+  title: `Hiểu Chữ Hán v${pkg.version} — Từ điển Hán Việt`,
   description:
     "Tra cứu chữ Hán nhanh chóng: nghĩa tiếng Việt, cách đọc Hán Việt, hoạt ảnh nét chữ, phân tích tự nguyên.",
   manifest: "/manifest.json",

@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hiểu Chữ Hán
 
-## Getting Started
+**Từ điển Hán Việt** — a Chinese–Vietnamese dictionary PWA.
 
-First, run the development server:
+Live: **[hieuchuhan.vercel.app](https://hieuchuhan.vercel.app)**
+
+---
+
+## What it does
+
+Type a Chinese character, compound word, or pinyin — the app instantly shows:
+
+- Vietnamese meaning
+- Sino-Vietnamese (Hán Việt) reading
+- English definitions
+- Character stroke order animation
+- Etymology (component breakdown)
+- Related / compound words
+- HSK level and frequency stats
+
+Installable as a PWA. Works offline after first visit. Auto-updates silently on new deploys.
+
+---
+
+## Data sources
+
+| Source | What it provides |
+|---|---|
+| [CC-CEDICT](https://cc-cedict.org) via [chinese-lexicon](https://github.com/mwdchang/chinese-lexicon) | English definitions, pinyin, etymology, HSK level, frequency |
+| [CVDICT](https://github.com/ph0ngp/CVDICT) by ph0ngp | Vietnamese meanings |
+| [Unicode Unihan](https://unicode.org/charts/unihan.html) (kVietnamese) | Sino-Vietnamese readings |
+| [hanzi-writer](https://hanziwriter.org) | Stroke order animations |
+
+---
+
+## Dev setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The dictionary data (`public/data/dictionary.json`) is pre-built and committed. Only regenerate it if the source data changes:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build:dict
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For codebase details — component structure, data flow, layout, PWA behaviour — see [ARCHITECTURE.md](./ARCHITECTURE.md).
