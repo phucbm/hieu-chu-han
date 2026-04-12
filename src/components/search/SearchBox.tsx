@@ -3,29 +3,25 @@
 /**
  * SearchBox — Unified search component: input + recent searches + results list.
  *
- * popover=false (desktop): results render inline below the input, always
- *   visible when `results` is non-empty (no focus gate).
+ * Results render inline below the input and collapse on: result click, input
+ * blur, or Escape. On mobile the list is max 300 px tall and scrolls inside.
  *
- * popover=true (mobile): results render inside a Base UI Popover anchored to
- *   the input. Opens on focus, closes on outside click / scroll / Escape —
- *   all handled natively by Base UI.
- *
- * Includes a handwriting button (PenLine icon) that opens HandwritingModal.
- * Selecting a candidate from the modal calls onResultSelect directly.
+ * Handwriting panel is an inline collapsible below the input row. It is
+ * mutually exclusive with the results list — they are never visible at the
+ * same time. Toggle with the pen button; the recognizer lifecycle is tied to
+ * open/close.
  */
 
-import { useState, useRef } from "react";
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { SearchInput } from "@/components/search/SearchInput";
 import { RecentSearch } from "@/components/search/RecentSearch";
 import { WordRow } from "@/components/search/WordRow";
-import { HandwritingModal } from "@/components/HandwritingModal";
+import { HandwritingPad } from "@/components/HandwritingPad";
+import { HandwritingRecognizer, type Candidate } from "@/core/handwriting";
 import { wordKey, type WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
 interface SearchBoxProps {
-  /** Wrap results in a Popover (mobile). Default: false (inline, desktop). */
-  popover?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   results: WordEntry[];
@@ -33,12 +29,11 @@ interface SearchBoxProps {
   recentSearches: ViewedWord[];
   onRecentSearchSelect: (simp: string) => void;
   onResultSelect: (simp: string) => void;
-  /** Called on Escape in inline mode so the parent can clear results. */
+  /** Called on Escape so the parent can clear results. */
   onEscape?: () => void;
 }
 
 export function SearchBox({
-  popover = false,
   query,
   onQueryChange,
   results,
@@ -50,101 +45,134 @@ export function SearchBox({
 }: SearchBoxProps) {
   const [focused, setFocused] = useState(false);
   const [handwritingOpen, setHandwritingOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [strokeCount, setStrokeCount] = useState(0);
+  const [padKey, setPadKey] = useState(0);
+  const recognizer = useRef<HandwritingRecognizer | null>(null);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Handwriting candidate selected → append to current query, let debounce handle search. */
-  const handleHandwritingSelect = (char: string) => {
-    onQueryChange(query + char);
-  };
+  const resultsOpen = focused && results.length > 0 && !handwritingOpen;
 
-  // ── Popover mode (mobile) ─────────────────────────────────────────────────
-  if (popover) {
-    return (
-      <div>
-        <div ref={anchorRef}>
-          <SearchInput
-            value={query}
-            onChange={onQueryChange}
-            isLoading={isLoading}
-            onFocus={() => setFocused(true)}
-            onEscape={() => setFocused(false)}
-            onHandwriting={() => setHandwritingOpen(true)}
-          />
-        </div>
-        <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
+  // ── Recognizer lifecycle ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (handwritingOpen) {
+      recognizer.current = new HandwritingRecognizer();
+      recognizer.current.init((r) => setCandidates(r));
+    } else {
+      recognizer.current?.destroy();
+      recognizer.current = null;
+      setCandidates([]);
+      setStrokeCount(0);
+    }
+  }, [handwritingOpen]);
 
-        <PopoverPrimitive.Root
-          open={focused && results.length > 0}
-          onOpenChange={(open) => {
-            if (!open) setFocused(false);
-          }}
-          modal={false}
-        >
-          <PopoverPrimitive.Portal>
-            <PopoverPrimitive.Positioner
-              anchor={anchorRef}
-              align="start"
-              side="bottom"
-              sideOffset={4}
-              className="isolate z-50 w-[var(--anchor-width)]"
-            >
-              <PopoverPrimitive.Popup className="max-h-[60vh] overflow-y-auto rounded-lg border bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none">
-                <ul className="divide-y divide-border">
-                  {results.map((item, i) => (
-                    <li key={`${item.simp}-${item.pinyin}-${i}`}>
-                      <WordRow
-                        entry={item}
-                        onSelect={() => {
-                          setFocused(false);
-                          onResultSelect(wordKey(item));
-                        }}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </PopoverPrimitive.Popup>
-            </PopoverPrimitive.Positioner>
-          </PopoverPrimitive.Portal>
-        </PopoverPrimitive.Root>
+  // ── Focus / blur ───────────────────────────────────────────────────────────
+  const handleFocus = useCallback(() => {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    setFocused(true);
+  }, []);
 
-        <HandwritingModal
-          open={handwritingOpen}
-          onOpenChange={setHandwritingOpen}
-          onSelect={handleHandwritingSelect}
-        />
-      </div>
-    );
-  }
+  const handleBlur = useCallback(() => {
+    // Small delay so a result click fires before we collapse.
+    blurTimer.current = setTimeout(() => setFocused(false), 150);
+  }, []);
 
-  // ── Inline mode (desktop) ─────────────────────────────────────────────────
+  // ── Handwriting ────────────────────────────────────────────────────────────
+  const handleStrokeEnd = useCallback((strokes: number[][][]) => {
+    setStrokeCount(strokes.length);
+    if (strokes.length === 0) {
+      setCandidates([]);
+    } else {
+      recognizer.current?.lookup(strokes);
+    }
+  }, []);
+
+  const handlePadClear = useCallback(() => setCandidates([]), []);
+
+  const handleCandidateSelect = useCallback(
+    (char: string) => {
+      onQueryChange(query + char);
+      setHandwritingOpen(false);
+      setFocused(true);
+    },
+    [onQueryChange, query]
+  );
+
+  // ── Result select ──────────────────────────────────────────────────────────
+  const handleResultSelect = useCallback(
+    (entry: WordEntry) => {
+      setFocused(false);
+      setHandwritingOpen(false);
+      onResultSelect(wordKey(entry));
+    },
+    [onResultSelect]
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <SearchInput
         value={query}
         onChange={onQueryChange}
         isLoading={isLoading}
-        onEscape={onEscape}
-        onHandwriting={() => setHandwritingOpen(true)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onEscape={() => {
+          setFocused(false);
+          onEscape?.();
+        }}
+        onHandwriting={() => setHandwritingOpen((v) => !v)}
       />
+
       <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
-      {results.length > 0 && (
-        <ul className="divide-y divide-border rounded-lg border overflow-hidden shrink-0">
+
+      {/* ── Results list ────────────────────────────────────────────────── */}
+      {resultsOpen && (
+        <ul className="divide-y divide-border rounded-lg border shrink-0 max-h-[300px] lg:max-h-none overflow-y-auto">
           {results.map((item, i) => (
             <li key={`${item.simp}-${item.pinyin}-${i}`}>
               <WordRow
                 entry={item}
-                onSelect={() => onResultSelect(wordKey(item))}
+                onSelect={() => handleResultSelect(item)}
               />
             </li>
           ))}
         </ul>
       )}
 
-      <HandwritingModal
-        open={handwritingOpen}
-        onOpenChange={setHandwritingOpen}
-        onSelect={handleHandwritingSelect}
-      />
+      {/* ── Handwriting panel ───────────────────────────────────────────── */}
+      {handwritingOpen && (
+        <div className="flex flex-col items-center gap-4">
+          <HandwritingPad
+            key={padKey}
+            onStrokeEnd={handleStrokeEnd}
+            onClear={handlePadClear}
+            strokeCount={strokeCount}
+            onUndo={() => {}}
+          />
+
+          {candidates.length > 0 ? (
+            <div className="w-full">
+              <p className="text-xs text-muted-foreground mb-2">Chọn chữ phù hợp:</p>
+              <div className="grid grid-cols-8 gap-1">
+                {candidates.map((c) => (
+                  <button
+                    key={c.hanzi}
+                    type="button"
+                    onClick={() => handleCandidateSelect(c.hanzi)}
+                    className="font-chinese text-2xl rounded-md border py-1 hover:bg-muted transition-colors text-center"
+                  >
+                    {c.hanzi}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {strokeCount === 0 ? "Vẽ một chữ Hán" : "Đang nhận dạng..."}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

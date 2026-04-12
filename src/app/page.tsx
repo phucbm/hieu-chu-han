@@ -10,7 +10,7 @@
  *
  * Mobile layout (<1024px): stacked
  *   Row 1 sticky: AppHeader
- *   Row 2 sticky: SearchBox (input + recent searches + popover results)
+ *   Row 2 sticky: SearchBox (input + recent searches + collapsible results)
  *   Row 3 scroll: word detail
  *   HistoryBottomSheet: overlay for viewed words
  *
@@ -158,7 +158,6 @@ export default function HomePage() {
                 {/* Row 2: sticky below header */}
                 <div className="sticky top-14 z-20 bg-background border-b px-4 py-3">
                     <SearchBox
-                        popover
                         query={query}
                         onQueryChange={setQuery}
                         results={results}

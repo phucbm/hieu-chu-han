@@ -82,7 +82,7 @@ export function StrokeBox({ simp, trad, defaultTrad = false }: StrokeBoxProps) {
       </div>
       {tradAvailable && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={`stroke-${simp}-toggle`} className="text-xs text-muted-foreground font-chinese">
+          <Label htmlFor={`stroke-${simp}-toggle`} className="text-xs text-muted-foreground">
             {useTrad ? "Phồn thể" : "Giản thể"}
           </Label>
           <Switch

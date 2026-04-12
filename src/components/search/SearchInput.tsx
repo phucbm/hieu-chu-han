@@ -17,6 +17,7 @@ interface SearchInputProps {
   onEscape?: () => void;
   /** Fired only when the <input> itself receives focus */
   onFocus?: () => void;
+  onBlur?: () => void;
   placeholder?: string;
   /** Opens the handwriting input modal */
   onHandwriting?: () => void;
@@ -30,6 +31,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       isLoading,
       onEscape,
       onFocus,
+      onBlur,
       placeholder = "Nhập chữ Hán, pinyin...",
       onHandwriting,
     },
@@ -43,6 +45,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={onFocus}
+          onBlur={onBlur}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               onEscape?.();
@@ -50,7 +53,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             }
           }}
           placeholder={placeholder}
-          className="pr-16 text-base h-11"
+          className="pr-16 text-base h-11 [&::-webkit-search-cancel-button]:hidden"
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
