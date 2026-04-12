@@ -96,10 +96,10 @@ export default function HomePage() {
                         sinoViet: entries[0].sinoVietnamese || undefined,
                         entry: entries[0],
                     });
-                    const wordParam = wordKey(entries[0]);
-                    const url = tab === wordParam
-                        ? `?word=${encodeURIComponent(wordParam)}`
-                        : `?word=${encodeURIComponent(wordParam)}&active=${encodeURIComponent(tab)}`;
+                    const defaultTab = wordKey(entries[0]);
+                    const url = tab === defaultTab
+                        ? `?word=${encodeURIComponent(simp)}`
+                        : `?word=${encodeURIComponent(simp)}&active=${encodeURIComponent(tab)}`;
                     window.history.replaceState(null, "", url);
                 }
             });
@@ -111,14 +111,14 @@ export default function HomePage() {
     const handleTabChange = useCallback((tab: string) => {
         setActiveTab(tab);
         const params = new URLSearchParams(window.location.search);
-        const word = params.get("word");
-        if (tab === word) {
+        const defaultTab = selectedEntries[0] ? wordKey(selectedEntries[0]) : null;
+        if (tab === defaultTab) {
             params.delete("active");
         } else {
             params.set("active", tab);
         }
         window.history.replaceState(null, "", `?${params.toString()}`);
-    }, []);
+    }, [selectedEntries]);
 
     // Keep a stable ref so the mount effect can call the latest openWord
     const openWordRef = useRef(openWord);
