@@ -22,6 +22,7 @@
  */
 
 import {useCallback, useEffect, useRef, useState, useTransition,} from "react";
+import Image from "next/image";
 import {AppSidebar} from "@/components/layout/AppSidebar";
 import {AppHeader} from "@/components/layout/AppHeader";
 import {HistoryBottomSheet} from "@/components/layout/HistoryBottomSheet";
@@ -32,6 +33,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {getWordEntries, searchWords} from "@/app/actions";
 import {useViewedWords} from "@/hooks/useViewedWords";
 import {wordKey, type WordEntry} from "@/core/types";
+import pkg from "../../package.json";
 
 // ── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -203,12 +205,29 @@ export default function HomePage() {
                 {detailContent ? (
                     <div className="">{detailContent}</div>
                 ) : (
-                    <div
-                        className="flex flex-col items-center justify-center min-h-[50vh] text-center text-muted-foreground gap-3">
-            <span className="font-chinese text-7xl opacity-15 select-none">
-              漢
-            </span>
-                        <p className="text-sm">Nhập chữ Hán để tra cứu</p>
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center gap-4 py-8">
+                        <Image src="/icon.png" alt="Hiểu Chữ Hán" width={72} height={72} className="rounded-2xl shadow-md"/>
+                        <div className="flex flex-col gap-1">
+                            <p className="font-semibold text-foreground">Hiểu Chữ Hán</p>
+                            <p className="text-sm text-muted-foreground max-w-xs">{pkg.description}</p>
+                        </div>
+                        <div className="text-xs text-muted-foreground/60 flex flex-col gap-1 max-w-xs">
+                            <p>Mã nguồn mở · Dữ liệu tổng hợp từ:</p>
+                            <ul className="space-y-0.5">
+                                <li>chinese-lexicon</li>
+                                <li>CC-CEDICT / CVDICT</li>
+                                <li>Unicode kVietnamese</li>
+                                <li>makemeahanzi</li>
+                            </ul>
+                        </div>
+                        <a
+                            href="https://github.com/phucbm/hieu-chu-han"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        >
+                            github.com/phucbm/hieu-chu-han
+                        </a>
                     </div>
                 )}
             </main>
