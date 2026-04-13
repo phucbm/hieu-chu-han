@@ -34,6 +34,7 @@ import {getWordEntries, searchWords} from "@/app/actions";
 import {useViewedWords} from "@/hooks/useViewedWords";
 import {wordKey, type WordEntry} from "@/core/types";
 import pkg from "../../package.json";
+import { InstallBadge } from "@/components/InstallBadge";
 
 // ── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -245,10 +246,13 @@ export default function HomePage() {
             />
 
             {/* ── Mobile footer ────────────────────────────────────────────────── */}
-            <footer className="lg:hidden border-t px-4 py-3 flex items-center justify-center gap-4 text-xs text-muted-foreground/50">
-                <span>Ứng dụng mã nguồn mở</span>
-                <a href="https://github.com/phucbm/hieu-chu-han" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">GitHub</a>
-                <a href="https://discord.gg/Wnckq2KE" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Discord</a>
+            <footer className="lg:hidden border-t px-4 py-3 flex flex-col items-center gap-2">
+                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/50">
+                    <span>Ứng dụng mã nguồn mở</span>
+                    <a href="https://github.com/phucbm/hieu-chu-han" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">GitHub</a>
+                    <a href="https://discord.gg/Wnckq2KE" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Discord</a>
+                </div>
+                <InstallBadge />
             </footer>
 
             {/* ── Mobile history bottom sheet ───────────────────────────────────── */}

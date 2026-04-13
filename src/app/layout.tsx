@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Serif, Noto_Serif_SC } from "next/font/google";
 import { SwAutoUpdate } from "@/components/SwAutoUpdate";
+import { PWATracker } from "@/components/PWATracker";
 import pkg from "../../package.json";
 import "./globals.css";
 
@@ -64,6 +65,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-serif">
         <SwAutoUpdate />
+        <PWATracker />
         {children}
       </body>
     </html>
