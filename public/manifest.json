@@ -1,7 +1,7 @@
 {
   "name": "Hiểu Chữ Hán",
-  "short_name": "HánTự",
-  "description": "Từ điển Hán Việt: tra nghĩa, cách đọc Hán Việt, hoạt ảnh nét chữ và phân tích tự nguyên.",
+  "short_name": "Hiểu Chữ Hán",
+  "description": "Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
