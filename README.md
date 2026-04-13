@@ -2,7 +2,7 @@
 
 Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.
 
-Live: **[hieuchuhan.vercel.app](https://hieuchuhan.vercel.app)**
+Live: **[hieuchuhan.phucbm.com](https://hieuchuhan.phucbm.com)**
 
 ---
 

@@ -14,7 +14,7 @@ Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ. Th
 - Etymology breakdown for single characters
 - Related/compound words
 
-Live at: **hieuchuhan.vercel.app**
+Live at: **hieuchuhan.phucbm.com**
 
 ---
 

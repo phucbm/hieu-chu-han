@@ -2,6 +2,7 @@
   "name": "hieu-chu-han",
   "version": "0.4.2",
   "description": "Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.",
+  "homepage": "https://hieuchuhan.phucbm.com",
   "private": true,
   "scripts": {
     "dev": "next dev",
