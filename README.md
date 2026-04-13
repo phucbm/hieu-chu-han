@@ -6,6 +6,14 @@ Live: **[hieuchuhan.vercel.app](https://hieuchuhan.vercel.app)**
 
 ---
 
+## Câu chuyện
+
+Là người Việt học chữ Hán, mình nhận ra rằng để nhớ lâu, không thể chỉ học thuộc lòng, mà cần **hiểu** chữ đó được tạo thành từ những thành phần nào, mang ý nghĩa gì. Hầu hết ứng dụng từ điển chỉ dừng lại ở việc dịch nghĩa, chưa chú trọng đến việc giúp người học thực sự **hiểu** cấu trúc của chữ.
+
+Vì vậy mình xây dựng ứng dụng này với trọng tâm là phân tích chữ Hán: từ bộ thủ, tự nguyên, đến chữ truyền thống (giúp thấy rõ nguồn gốc hơn). Bên cạnh đó vẫn có đầy đủ tính năng cơ bản: hoạt ảnh nét bút, nhận dạng chữ viết tay. Với người Việt, âm Hán Việt còn là một "chìa khóa" giúp ghi nhớ dễ hơn, và tất nhiên không thể thiếu trong ứng dụng này.
+
+---
+
 ## What it does
 
 Type a Chinese character, compound word, or pinyin — the app instantly shows:
@@ -29,6 +37,7 @@ Installable as a PWA. Works offline after first visit. Auto-updates silently on 
 | [CC-CEDICT](https://cc-cedict.org) via [chinese-lexicon](https://github.com/mwdchang/chinese-lexicon) | English definitions, pinyin, etymology, HSK level, frequency |
 | [CVDICT](https://github.com/ph0ngp/CVDICT) by ph0ngp | Vietnamese meanings |
 | [Unicode Unihan](https://unicode.org/charts/unihan.html) (kVietnamese) | Sino-Vietnamese readings |
+| [makemeahanzi](https://github.com/skishore/makemeahanzi) | Character decomposition, etymology fallback |
 | [hanzi-writer](https://hanziwriter.org) | Stroke order animations |
 
 ---

@@ -205,29 +205,33 @@ export default function HomePage() {
                 {detailContent ? (
                     <div className="">{detailContent}</div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center gap-4 py-8">
+                    <div className="flex flex-col items-center min-h-[50vh] text-center gap-6 py-8 max-w-sm mx-auto">
                         <Image src="/icon.png" alt="Hiểu Chữ Hán" width={72} height={72} className="rounded-2xl shadow-md"/>
                         <div className="flex flex-col gap-1">
                             <p className="font-semibold text-foreground">Hiểu Chữ Hán</p>
-                            <p className="text-sm text-muted-foreground max-w-xs">{pkg.description}</p>
+                            <p className="text-sm text-muted-foreground">{pkg.description}</p>
                         </div>
-                        <div className="text-xs text-muted-foreground/60 flex flex-col gap-1 max-w-xs">
+                        <p className="text-sm text-muted-foreground/80 text-left leading-relaxed">
+                            Là người Việt học chữ Hán, mình nhận ra rằng để nhớ lâu, không thể chỉ học thuộc lòng,
+                            mà cần <em>hiểu</em> chữ đó được tạo thành từ những thành phần nào, mang ý nghĩa gì.
+                            Hầu hết ứng dụng từ điển chỉ dừng lại ở việc dịch nghĩa, chưa chú trọng đến việc
+                            giúp người học thực sự <em>hiểu</em> cấu trúc của chữ.
+                        </p>
+                        <p className="text-sm text-muted-foreground/80 text-left leading-relaxed">
+                            Vì vậy mình xây dựng ứng dụng này với trọng tâm là phân tích chữ Hán: từ bộ thủ,
+                            tự nguyên, đến chữ truyền thống (giúp thấy rõ nguồn gốc hơn). Bên cạnh đó vẫn có
+                            đầy đủ tính năng cơ bản: hoạt ảnh nét bút, nhận dạng chữ viết tay.
+                            Với người Việt, âm Hán Việt còn là một &ldquo;chìa khóa&rdquo; giúp ghi nhớ dễ hơn, và tất nhiên
+                            không thể thiếu trong ứng dụng này.
+                        </p>
+                        <div className="w-full border-t pt-4 flex flex-col gap-2 text-xs text-muted-foreground/50">
                             <p>Mã nguồn mở · Dữ liệu tổng hợp từ:</p>
-                            <ul className="space-y-0.5">
-                                <li>chinese-lexicon</li>
-                                <li>CC-CEDICT / CVDICT</li>
-                                <li>Unicode kVietnamese</li>
-                                <li>makemeahanzi</li>
-                            </ul>
+                            <p>chinese-lexicon · CC-CEDICT / CVDICT · Unicode kVietnamese · makemeahanzi</p>
+                            <div className="hidden lg:flex items-center justify-center gap-4">
+                                <a href="https://github.com/phucbm/hieu-chu-han" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">GitHub</a>
+                                <a href="https://discord.gg/Wnckq2KE" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Discord</a>
+                            </div>
                         </div>
-                        <a
-                            href="https://github.com/phucbm/hieu-chu-han"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                        >
-                            github.com/phucbm/hieu-chu-han
-                        </a>
                     </div>
                 )}
             </main>
@@ -239,6 +243,13 @@ export default function HomePage() {
                 onSelect={openWord}
                 onRemove={removeViewedWord}
             />
+
+            {/* ── Mobile footer ────────────────────────────────────────────────── */}
+            <footer className="lg:hidden border-t px-4 py-3 flex items-center justify-center gap-4 text-xs text-muted-foreground/50">
+                <span>Ứng dụng mã nguồn mở</span>
+                <a href="https://github.com/phucbm/hieu-chu-han" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">GitHub</a>
+                <a href="https://discord.gg/Wnckq2KE" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Discord</a>
+            </footer>
 
             {/* ── Mobile history bottom sheet ───────────────────────────────────── */}
             <HistoryBottomSheet
