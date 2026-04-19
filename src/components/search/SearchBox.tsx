@@ -3,14 +3,14 @@
 /**
  * SearchBox — Unified search component: input + recent searches + results list.
  *
- * collapsible=false (desktop): results/message always visible when query is
- *   non-empty and handwriting is closed.
+ * Two mutually exclusive modes driven by last user interaction:
+ *   text        — text input focused → results list visible
+ *   handwriting — pad open → canvas + candidates visible
  *
- * collapsible=true (mobile): results/message only shown when the input is
- *   focused. Collapses on blur, result click, or Escape.
+ * Clicking the text input while the pad is open switches back to text mode.
+ * Selecting a candidate stays in handwriting mode and clears the canvas.
  *
- * Handwriting panel is an inline collapsible, mutually exclusive with the
- * results area on both breakpoints.
+ * collapsible=true (mobile): results/pad only visible while focused or pad open.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -32,7 +32,6 @@ interface SearchBoxProps {
   recentSearches: ViewedWord[];
   onRecentSearchSelect: (simp: string) => void;
   onResultSelect: (simp: string) => void;
-  /** Called on Escape so the parent can clear results. */
   onEscape?: () => void;
 }
 
@@ -56,14 +55,14 @@ export function SearchBox({
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Refocus after search completes to recover from DOM-churn blur ─────────
+  // Refocus text input after search completes, but only when in text mode
   const prevLoadingRef = useRef(false);
   useEffect(() => {
-    if (prevLoadingRef.current && !isLoading && query.length > 0) {
+    if (prevLoadingRef.current && !isLoading && query.length > 0 && !handwritingOpen) {
       inputRef.current?.focus();
     }
     prevLoadingRef.current = isLoading ?? false;
-  }, [isLoading, query.length]);
+  }, [isLoading, query.length, handwritingOpen]);
 
   // ── Recognizer lifecycle ───────────────────────────────────────────────────
   useEffect(() => {
@@ -82,10 +81,10 @@ export function SearchBox({
   const handleFocus = useCallback(() => {
     if (blurTimer.current) clearTimeout(blurTimer.current);
     setFocused(true);
+    setHandwritingOpen(false); // switch to text mode
   }, []);
 
   const handleBlur = useCallback(() => {
-    // Small delay so a result click fires before we collapse.
     blurTimer.current = setTimeout(() => setFocused(false), 150);
   }, []);
 
@@ -99,13 +98,18 @@ export function SearchBox({
     }
   }, []);
 
-  const handlePadClear = useCallback(() => setCandidates([]), []);
+  const handlePadClear = useCallback(() => {
+    setCandidates([]);
+    setStrokeCount(0);
+  }, []);
 
   const handleCandidateSelect = useCallback(
     (char: string) => {
       onQueryChange(query + char);
-      setHandwritingOpen(false);
-      setFocused(true);
+      // Stay in handwriting mode — clear canvas so user can draw the next character immediately
+      setPadKey((k) => k + 1);
+      setCandidates([]);
+      setStrokeCount(0);
     },
     [onQueryChange, query]
   );
@@ -120,6 +124,9 @@ export function SearchBox({
     [onResultSelect]
   );
 
+  const showResults =
+    (!collapsible || focused) && !handwritingOpen && query.length > 0 && !isLoading;
+
   return (
     <div className="flex flex-col gap-4">
       <SearchInput
@@ -131,6 +138,7 @@ export function SearchBox({
         onBlur={handleBlur}
         onEscape={() => {
           setFocused(false);
+          setHandwritingOpen(false);
           onEscape?.();
         }}
         onHandwriting={() => setHandwritingOpen((v) => !v)}
@@ -139,7 +147,7 @@ export function SearchBox({
       <RecentSearch words={recentSearches} onSelect={onRecentSearchSelect} />
 
       {/* ── Results list / no-match message ────────────────────────────── */}
-      {(!collapsible || focused) && !handwritingOpen && query.length > 0 && !isLoading && (
+      {showResults && (
         results.length > 0 ? (
           <ul className="divide-y divide-border rounded-lg border shrink-0 max-h-[300px] lg:max-h-none overflow-y-auto">
             {results.map((item, i) => (
