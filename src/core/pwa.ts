@@ -22,6 +22,16 @@ export async function trackPageVisit(): Promise<void> {
   }
 }
 
+/** Increment the AI explanation counter. Fire-and-forget; silent on failure. No-op in development. */
+export async function trackAiCall(): Promise<void> {
+  if (!isProd) return;
+  try {
+    await fetch(`${BASE}/hieu-chu-han-ai-explain/up`, { headers });
+  } catch {
+    // silent fail
+  }
+}
+
 /** Increment the install counter. Fire-and-forget; silent on failure. No-op in development. */
 export async function trackInstall(): Promise<void> {
   if (!isProd) return;

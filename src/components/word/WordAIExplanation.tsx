@@ -7,7 +7,9 @@ import {Button} from "@/components/ui/button";
 import {isGroqConfigured, streamWordAnalysis} from "@/lib/groq";
 import {db} from "@/lib/db";
 import {getDailyLimit, getRemainingCalls, getResetAt, recordAiCall} from "@/lib/aiRateLimit";
+import {trackAiCall} from "@/core/pwa";
 import {BotMessageSquare, Check, Copy, Loader2} from "lucide-react";
+import {MovingBorder} from "@/components/phucbm/moving-border";
 
 function resetIn(resetAt: number): string {
     const ms = resetAt - Date.now();
@@ -77,6 +79,7 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
 
             const model = process.env.NEXT_PUBLIC_GROQ_MODEL || "llama-3.1-8b-instant";
             await db.aiExplanations.put({simp, content: full, model, generatedAt: Date.now()});
+            void trackAiCall();
 
             setStatus("done");
             setStreamContent("");
@@ -142,8 +145,10 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
             )}
 
             {hasContent && (
-                <div className="rounded-xl bg-stone-100 p-4 flex flex-col gap-3">
-                    <div className="prose prose-sm prose-stone max-w-none
+                <MovingBorder className="overflow-hidden" radius={15} borderWidth={1} gradientWidth={800} duration={3}
+                              colors={["#005aff", "#4486ff", "#cad3ff"]}>
+                    <div className="bg-stone-100 p-4 flex flex-col gap-3">
+                        <div className="prose prose-sm prose-stone max-w-none
                         prose-headings:font-semibold
                         prose-h2:text-base prose-h2:mt-0
                         prose-h3:text-sm prose-h3:mt-3 prose-h3:mb-1
@@ -153,15 +158,17 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                         prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-stone-400 prose-blockquote:pl-3 prose-blockquote:text-stone-600
                         prose-strong:font-semibold
                         prose-a:text-primary prose-a:no-underline hover:prose-a:no-underline">
-                        <ReactMarkdown>{content}</ReactMarkdown>
+                            <ReactMarkdown>{content}</ReactMarkdown>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-stone-200 pt-2">
+                            <p className="text-xs text-muted-foreground">
+                                AI ({cached?.model ?? process.env.NEXT_PUBLIC_GROQ_MODEL ?? "llama-3.1-8b-instant"})
+                                {cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được
+                                tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between border-t border-stone-200 pt-2">
-                        <p className="text-xs text-muted-foreground">
-                            AI ({cached?.model ?? process.env.NEXT_PUBLIC_GROQ_MODEL ?? "llama-3.1-8b-instant"})
-                            {cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
-                        </p>
-                    </div>
-                </div>
+                </MovingBorder>
             )}
         </div>
     );
