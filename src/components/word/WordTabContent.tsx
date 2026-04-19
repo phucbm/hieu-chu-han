@@ -19,6 +19,7 @@ import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} fro
 import {Button} from "@/components/ui/button";
 import {CopyShareButton} from "@/components/shared/CopyShareButton";
 import {ReportIssueDialog} from "@/components/ReportIssueDialog";
+import {WordAIExplanation} from "@/components/word/WordAIExplanation";
 import {Braces, Flag} from "lucide-react";
 
 interface WordTabContentProps {
@@ -87,6 +88,9 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+
+                <WordAIExplanation simp={entry.simp} trad={entry.trad}/>
 
                 {isSingleChar && (
                     <EtymologySection entry={entry} onWordClick={onWordClick}/>
