@@ -159,9 +159,31 @@ export function SearchBox({
               </li>
             ))}
           </ul>
-        ) : (
-          <p className="text-xs text-muted-foreground px-1">Không tìm thấy kết quả phù hợp</p>
-        )
+        ) : (() => {
+          const cjkChars = query.match(/[\u4e00-\u9fff]/g) ?? [];
+          return (
+            <div className="flex flex-col gap-2 px-1">
+              <p className="text-xs text-muted-foreground">
+                Không tìm thấy kết quả{cjkChars.length > 0 ? ", thử từng chữ:" : " phù hợp"}
+              </p>
+              {cjkChars.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {cjkChars.map((char, i) => (
+                    <button
+                      key={`${char}-${i}`}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => onResultSelect(char)}
+                      className="font-chinese text-xl rounded-md border px-2.5 py-1 hover:bg-muted transition-colors"
+                    >
+                      {char}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()
       )}
 
       {/* ── Handwriting panel ───────────────────────────────────────────── */}
