@@ -3,18 +3,39 @@ name: Notify Discord on Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - name: Fetch latest release info (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE=$(gh release view --repo ${{ github.repository }} --json tagName,name,body,url)
+          echo "TAG=$(echo "$RELEASE" | jq -r '.tagName')" >> "$GITHUB_ENV"
+          echo "NAME=$(echo "$RELEASE" | jq -r '.name')" >> "$GITHUB_ENV"
+          echo "URL=$(echo "$RELEASE" | jq -r '.url')" >> "$GITHUB_ENV"
+          echo 'BODY<<EOF' >> "$GITHUB_ENV"
+          echo "$RELEASE" | jq -r '.body' >> "$GITHUB_ENV"
+          echo 'EOF' >> "$GITHUB_ENV"
+
+      - name: Map release event fields
+        if: github.event_name == 'release'
+        run: |
+          echo "TAG=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+          echo "NAME=${{ github.event.release.name }}" >> "$GITHUB_ENV"
+          echo "URL=${{ github.event.release.html_url }}" >> "$GITHUB_ENV"
+          # body is set separately to handle multiline
+          echo 'BODY<<EOF' >> "$GITHUB_ENV"
+          echo "${{ github.event.release.body }}" >> "$GITHUB_ENV"
+          echo 'EOF' >> "$GITHUB_ENV"
+
       - name: Send release notification to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          TAG: ${{ github.event.release.tag_name }}
-          NAME: ${{ github.event.release.name }}
-          BODY: ${{ github.event.release.body }}
-          URL: ${{ github.event.release.html_url }}
         run: |
           TITLE="${NAME:-$TAG}"
           # Truncate body to 4000 chars (Discord embed limit)
