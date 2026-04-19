@@ -36,7 +36,7 @@ export function WordTabs({ entries, onWordClick, activeTab, onTabChange }: WordT
       onValueChange={onTabChange}
       className="w-full"
     >
-      <div className="sticky top-0 z-20 bg-background">
+      <div className="sticky top-0 z-20 bg-background border rounded-lg shadow">
         <TabsList className="w-full overflow-x-auto h-auto gap-1 p-1 flex flex-nowrap justify-start">
           {unique.map((entry, i) => (
             <TabsTrigger
@@ -49,11 +49,13 @@ export function WordTabs({ entries, onWordClick, activeTab, onTabChange }: WordT
           ))}
         </TabsList>
       </div>
-      {unique.map((entry, i) => (
-        <TabsContent key={`${wordKey(entry)}-${i}`} value={wordKey(entry)}>
-          <WordTabContent entry={entry} onWordClick={onWordClick} />
-        </TabsContent>
-      ))}
+      <div className="relative z-10">
+          {unique.map((entry, i) => (
+              <TabsContent key={`${wordKey(entry)}-${i}`} value={wordKey(entry)}>
+                  <WordTabContent entry={entry} onWordClick={onWordClick} />
+              </TabsContent>
+          ))}
+      </div>
     </Tabs>
   );
 }

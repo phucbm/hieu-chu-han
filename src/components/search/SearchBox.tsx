@@ -161,7 +161,7 @@ export function SearchBox({
           </ul>
         ) : (
           <p className="text-xs text-muted-foreground px-1">
-            Không tìm thấy kết quả — xem từng chữ ở các tab bên dưới
+            Không tìm thấy kết quả, xem từng chữ ở phần nội dung.
           </p>
         )
       )}
