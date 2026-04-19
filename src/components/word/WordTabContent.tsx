@@ -18,7 +18,8 @@ import {useState} from "react";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";
 import {CopyShareButton} from "@/components/shared/CopyShareButton";
-import {Braces} from "lucide-react";
+import {ReportIssueDialog} from "@/components/ReportIssueDialog";
+import {Braces, Flag} from "lucide-react";
 
 interface WordTabContentProps {
     entry: WordEntry;
@@ -35,7 +36,19 @@ export function WordTabContent({ entry, onWordClick }: WordTabContentProps) {
             <div className="flex flex-col gap-6 relative w-full">
 
                 {/* Action buttons — top right */}
-                <div className="flex justify-end items-center gap-0.5">
+                <div className="action-buttons flex justify-end items-center gap-0.5">
+                    <ReportIssueDialog url={typeof window !== "undefined" ? window.location.href : undefined}>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            title="Báo lỗi"
+                            aria-label="Báo lỗi"
+                        >
+                            <Flag className="h-3.5 w-3.5"/>
+                        </Button>
+                    </ReportIssueDialog>
                     <CopyShareButton simp={wordKey(entry)}/>
                     <Button
                         type="button"

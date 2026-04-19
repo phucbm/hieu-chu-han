@@ -53,6 +53,7 @@ export function AppSidebar({
           onEscape={onDismissResults}
         />
       </div>
+
     </aside>
   );
 }
