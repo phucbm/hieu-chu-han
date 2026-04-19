@@ -2,8 +2,10 @@
 
 import {useState} from "react";
 import ReactMarkdown from "react-markdown";
+import {useLiveQuery} from "dexie-react-hooks";
 import {Button} from "@/components/ui/button";
 import {isGroqConfigured, streamWordAnalysis} from "@/lib/groq";
+import {db} from "@/lib/db";
 import {BotMessageSquare, Check, Copy, Loader2} from "lucide-react";
 
 interface WordAIExplanationProps {
@@ -15,26 +17,38 @@ type Status = "idle" | "loading" | "streaming" | "done" | "error";
 
 export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
     const [status, setStatus] = useState<Status>("idle");
-    const [content, setContent] = useState("");
+    const [streamContent, setStreamContent] = useState("");
     const [error, setError] = useState("");
     const [copied, setCopied] = useState(false);
 
+    const cached = useLiveQuery(() => db.aiExplanations.get(simp), [simp]);
+
     if (!isGroqConfigured()) return null;
+
+    const isRunning = status === "loading" || status === "streaming";
+    const content = isRunning ? streamContent : (cached?.content ?? streamContent);
+    const hasContent = !!content;
 
     async function handleGenerate() {
         setStatus("loading");
-        setContent("");
+        setStreamContent("");
         setError("");
 
         try {
             const stream = streamWordAnalysis(simp, trad);
             setStatus("streaming");
 
+            let full = "";
             for await (const chunk of stream) {
-                setContent(prev => prev + chunk);
+                full += chunk;
+                setStreamContent(full);
             }
 
+            const model = process.env.NEXT_PUBLIC_GROQ_MODEL || "llama-3.1-8b-instant";
+            await db.aiExplanations.put({simp, content: full, model, generatedAt: Date.now()});
+
             setStatus("done");
+            setStreamContent("");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
             setStatus("error");
@@ -47,15 +61,16 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
         setTimeout(() => setCopied(false), 2000);
     }
 
-    const isRunning = status === "loading" || status === "streaming";
-    const hasContent = (status === "streaming" || status === "done") && !!content;
+    const generatedAt = cached?.generatedAt
+        ? new Date(cached.generatedAt).toLocaleDateString("vi-VN")
+        : null;
 
     return (
         <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <p className="text-sm">Giải thích bằng AI</p>
                 <div className="flex items-center gap-0.5">
-                    {hasContent && (
+                    {hasContent && !isRunning && (
                         <Button
                             type="button"
                             variant="ghost"
@@ -65,10 +80,7 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                             title="Sao chép"
                             aria-label="Sao chép nội dung"
                         >
-                            {copied
-                                ? <Check className="h-3.5 w-3.5"/>
-                                : <Copy className="h-3.5 w-3.5"/>
-                            }
+                            {copied ? <Check className="h-3.5 w-3.5"/> : <Copy className="h-3.5 w-3.5"/>}
                         </Button>
                     )}
                     <Button
@@ -84,7 +96,7 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                         ) : (
                             <BotMessageSquare className="h-3.5 w-3.5"/>
                         )}
-                        {status === "idle" ? "Phân tích" : isRunning ? "Đang xử lý..." : "Phân tích lại"}
+                        {isRunning ? "Đang xử lý..." : cached ? "Tạo lại" : "Phân tích"}
                     </Button>
                 </div>
             </div>
@@ -106,9 +118,12 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                         prose-strong:font-semibold">
                         <ReactMarkdown>{content}</ReactMarkdown>
                     </div>
-                    <p className="text-xs text-muted-foreground border-t border-stone-200 pt-2">
-                        AI ({process.env.NEXT_PUBLIC_GROQ_MODEL || "llama-3.1-8b-instant"}) - nội dung được tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
-                    </p>
+                    <div className="flex items-center justify-between border-t border-stone-200 pt-2">
+                        <p className="text-xs text-muted-foreground">
+                            AI ({cached?.model ?? process.env.NEXT_PUBLIC_GROQ_MODEL ?? "llama-3.1-8b-instant"})
+                            {generatedAt && !isRunning ? ` · ${generatedAt}` : ""} — chỉ để tham khảo.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>
