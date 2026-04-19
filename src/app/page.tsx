@@ -253,6 +253,9 @@ export default function HomePage() {
                     <a href="https://discord.gg/Wnckq2KE" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">Discord</a>
                 </div>
                 <InstallBadge />
+                <a href="https://launch.j2team.dev/products/hieu-chu-han?utm_source=badge-launched&utm_medium=badge&utm_campaign=badge-hieu-chu-han" target="_blank" rel="noopener noreferrer">
+                    <img src="https://launch.j2team.dev/badge/hieu-chu-han/light" alt="Hiểu Chữ Hán - Launched on J2TEAM Launch" width="250" height="54" loading="lazy" />
+                </a>
             </footer>
 
             {/* ── Mobile history bottom sheet ───────────────────────────────────── */}

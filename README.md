@@ -4,6 +4,8 @@ Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.
 
 Live: **[hieuchuhan.phucbm.com](https://hieuchuhan.phucbm.com)**
 
+[![Hiểu Chữ Hán - Launched on J2TEAM Launch](https://launch.j2team.dev/badge/hieu-chu-han/light)](https://launch.j2team.dev/products/hieu-chu-han?utm_source=badge-launched&utm_medium=badge&utm_campaign=badge-hieu-chu-han)
+
 ---
 
 ## Câu chuyện
