@@ -54,6 +54,16 @@ export function SearchBox({
   const [padKey, setPadKey] = useState(0);
   const recognizer = useRef<HandwritingRecognizer | null>(null);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // ── Refocus after search completes to recover from DOM-churn blur ─────────
+  const prevLoadingRef = useRef(false);
+  useEffect(() => {
+    if (prevLoadingRef.current && !isLoading && query.length > 0) {
+      inputRef.current?.focus();
+    }
+    prevLoadingRef.current = isLoading ?? false;
+  }, [isLoading, query.length]);
 
   // ── Recognizer lifecycle ───────────────────────────────────────────────────
   useEffect(() => {
@@ -113,6 +123,7 @@ export function SearchBox({
   return (
     <div className="flex flex-col gap-4">
       <SearchInput
+        ref={inputRef}
         value={query}
         onChange={onQueryChange}
         isLoading={isLoading}

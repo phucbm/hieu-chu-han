@@ -59,7 +59,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           autoCapitalize="off"
           spellCheck={false}
           aria-label="Tìm kiếm chữ Hán"
-          disabled={isLoading}
         />
 
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
