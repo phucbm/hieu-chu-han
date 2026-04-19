@@ -8,6 +8,13 @@ import {isGroqConfigured, streamWordAnalysis} from "@/lib/groq";
 import {db} from "@/lib/db";
 import {BotMessageSquare, Check, Copy, Loader2} from "lucide-react";
 
+function relativeTime(ts: number): string {
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    return new Date(ts).toLocaleString("vi-VN", {dateStyle: "short", timeStyle: "short"});
+}
+
 interface WordAIExplanationProps {
     simp: string;
     trad?: string;
@@ -61,10 +68,6 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
         setTimeout(() => setCopied(false), 2000);
     }
 
-    const generatedAt = cached?.generatedAt
-        ? new Date(cached.generatedAt).toLocaleDateString("vi-VN")
-        : null;
-
     return (
         <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -115,13 +118,14 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                         prose-li:text-sm prose-li:my-0
                         prose-ul:my-1 prose-ul:pl-4
                         prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-stone-400 prose-blockquote:pl-3 prose-blockquote:text-stone-600
-                        prose-strong:font-semibold">
+                        prose-strong:font-semibold
+                        prose-a:text-primary prose-a:no-underline hover:prose-a:no-underline">
                         <ReactMarkdown>{content}</ReactMarkdown>
                     </div>
                     <div className="flex items-center justify-between border-t border-stone-200 pt-2">
                         <p className="text-xs text-muted-foreground">
                             AI ({cached?.model ?? process.env.NEXT_PUBLIC_GROQ_MODEL ?? "llama-3.1-8b-instant"})
-                            {generatedAt && !isRunning ? ` · ${generatedAt}` : ""} — chỉ để tham khảo.
+                            {cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
                         </p>
                     </div>
                 </div>
