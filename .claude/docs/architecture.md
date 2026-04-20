@@ -1,9 +1,5 @@
 # Hiểu Chữ Hán — Architecture
 
-Quick reference for anyone starting on this codebase.
-
----
-
 ## What the app does
 
 Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ. The user types a Chinese word or pinyin; the app returns:
@@ -16,8 +12,6 @@ Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ. Th
 
 Live at: **hieuchuhan.phucbm.com**
 
----
-
 ## Stack
 
 | Layer | Choice |
@@ -28,8 +22,6 @@ Live at: **hieuchuhan.phucbm.com**
 | Data | Static JSON served from `public/data/dictionary.json` |
 | Deploy | Vercel (static export, `output: 'export'`) |
 
----
-
 ## Key architectural decision: static dictionary
 
 `chinese-lexicon` is a Node.js-only package (CommonJS `require`). To run fully client-side:
@@ -37,13 +29,6 @@ Live at: **hieuchuhan.phucbm.com**
 1. **`scripts/build-dictionary.ts`** — run once locally to generate `public/data/dictionary.json` (28 MB, 116K entries enriched with CVDICT + kVietnamese). Committed to the repo.
 2. **`src/core/client-dictionary.ts`** — fetches the JSON lazily on first search, builds in-memory indices, implements `lookupWord()` and `getWordDetail()`.
 3. **`src/app/actions.ts`** — thin wrappers around `client-dictionary` with the same async signatures used throughout the app (`suggestWords`, `searchWords`, `getWordEntries`).
-
-To regenerate the dictionary (only needed when source data changes):
-```
-npm run build:dict
-```
-
----
 
 ## Data sources
 
@@ -53,8 +38,6 @@ npm run build:dict
 | `src/data/cvdict.json` | Parsed from `CVDICT.u8` by `scripts/parse-cvdict.ts` | Vietnamese meanings, keyed by simplified char |
 | `src/data/kVietnamese.json` | Unicode Unihan 12.1 | Sino-Vietnamese readings, keyed by char |
 | `node_modules/chinese-lexicon` | CC-CEDICT + Outlier Linguistics | EN defs, pinyin, etymology, HSK, frequency |
-
----
 
 ## Layout (desktop ≥1024px)
 
@@ -85,8 +68,6 @@ npm run build:dict
 └────────────────────────────┘
          HistorySheet ──► slides from right (overlay)
 ```
-
----
 
 ## Component tree
 
@@ -128,8 +109,6 @@ hooks/
   useViewedWords      — localStorage persistence (hch_viewed_words), viewedAt[] for count
 ```
 
----
-
 ## Search flow
 
 1. User types → 600ms debounce → `searchWords(query)` → `lookupWord()` → substring + pinyin match → sorted by `boost × relevance`
@@ -140,8 +119,6 @@ hooks/
 ## Viewed words flow
 
 `openWord(simp)` → `addViewedWord()` → `hch_viewed_words` in localStorage → `viewedAt[]` grows on each view → `viewedAt.length` is the view count shown in `WordRow`.
-
----
 
 ## PWA / offline
 
