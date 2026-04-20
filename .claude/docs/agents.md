@@ -2,13 +2,13 @@
 
 ## Provider
 - GROQ via OpenAI-compatible API (`https://api.groq.com/openai/v1/chat/completions`)
-- Default model: `llama-3.1-8b-instant` (override via `NEXT_PUBLIC_GROQ_MODEL`)
+- Default model: `llama-3.1-8b-instant` (override via `GROQ_MODEL`)
 - Stream: SSE, temperature: 0, max_tokens: 16384
 
 ## Entry point
-`src/lib/groq.ts` — `streamWordAnalysis(simp, trad?)` returns `AsyncGenerator<string>`
+`src/lib/groq.ts` — `streamWordAnalysis(simp, trad?)` returns `AsyncGenerator<string>`, proxied via `POST /api/ai/stream`
 
-Prompt template loaded at runtime via `fetch('/prompts/word-analysis.md')` — not a static import.
+Prompt template loaded server-side from `public/prompts/word-analysis.md` via `fs.readFile`.
 Placeholders: `{{simp}}`, `{{trad}}`, `{{trad_line}}`
 
 ## Rate limiting
@@ -20,8 +20,6 @@ Key functions: `getRemainingCalls()`, `recordAiCall()`, `getResetAt()`
 `src/components/PWATracker.tsx` — tracks AI explanation calls via counterapi.dev (anonymous hit counter, no user data).
 
 ## Env vars
-- `NEXT_PUBLIC_GROQ_API_KEY` — required; feature disabled if unset
-- `NEXT_PUBLIC_GROQ_MODEL` — optional model override
-- `NEXT_PUBLIC_AI_DAILY_LIMIT` — optional daily limit override (default 30)
-
-All vars are `NEXT_PUBLIC_` — exposed to the client bundle. No server-side secret handling.
+- `GROQ_API_KEY` — server-side only; route returns 503 if unset
+- `GROQ_MODEL` — server-side only; optional model override
+- `NEXT_PUBLIC_AI_DAILY_LIMIT` — client-side daily limit override (default 30)

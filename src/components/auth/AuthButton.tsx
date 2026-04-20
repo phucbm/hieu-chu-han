@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { useAuth, useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
@@ -10,18 +10,23 @@ import { LogIn } from "lucide-react";
  */
 export function AuthButton() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
 
   if (!isLoaded) return null;
 
   if (isSignedIn) {
+    const name = user?.firstName ?? user?.username ?? user?.emailAddresses[0]?.emailAddress ?? "";
     return (
-      <UserButton
-        appearance={{
-          elements: {
-            avatarBox: "w-8 h-8",
-          },
-        }}
-      />
+      <div className="flex items-center gap-2">
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8",
+            },
+          }}
+        />
+        {name && <span className="text-sm truncate max-w-[120px]">{name}</span>}
+      </div>
     );
   }
 

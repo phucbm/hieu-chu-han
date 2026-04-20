@@ -4,7 +4,7 @@ import {useState} from "react";
 import ReactMarkdown from "react-markdown";
 import {useLiveQuery} from "dexie-react-hooks";
 import {Button} from "@/components/ui/button";
-import {isGroqConfigured, streamWordAnalysis} from "@/lib/groq";
+import {streamWordAnalysis} from "@/lib/groq";
 import {db} from "@/lib/db";
 import {getDailyLimit, getRemainingCalls, getResetAt, recordAiCall} from "@/lib/aiRateLimit";
 import {trackAiCall} from "@/core/pwa";
@@ -46,8 +46,6 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
     const remaining = useLiveQuery(() => getRemainingCalls(), [status]);
     const resetAt = useLiveQuery(() => getResetAt(), [status]);
 
-    if (!isGroqConfigured()) return null;
-
     const limit = getDailyLimit();
     const isLimited = remaining === 0;
 
@@ -77,8 +75,7 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                 setStreamContent(full);
             }
 
-            const model = process.env.NEXT_PUBLIC_GROQ_MODEL || "llama-3.1-8b-instant";
-            await db.aiExplanations.put({simp, content: full, model, generatedAt: Date.now()});
+            await db.aiExplanations.put({simp, content: full, model: "groq", generatedAt: Date.now()});
             void trackAiCall();
 
             setStatus("done");
@@ -162,8 +159,7 @@ export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
                         </div>
                         <div className="flex items-center justify-between border-t border-stone-200 pt-2">
                             <p className="text-xs text-muted-foreground">
-                                AI ({cached?.model ?? process.env.NEXT_PUBLIC_GROQ_MODEL ?? "llama-3.1-8b-instant"})
-                                {cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được
+                                AI{cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được
                                 tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
                             </p>
                         </div>

@@ -1,50 +1,13 @@
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-function getConfig() {
-    const key = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-    const model = process.env.NEXT_PUBLIC_GROQ_MODEL || "llama-3.1-8b-instant";
-    return { key, model };
-}
-
-export function isGroqConfigured(): boolean {
-    return !!process.env.NEXT_PUBLIC_GROQ_API_KEY;
-}
-
-async function loadPromptTemplate(): Promise<string> {
-    const res = await fetch("/prompts/word-analysis.md");
-    if (!res.ok) throw new Error("Không tải được prompt template");
-    return res.text();
-}
-
 export async function* streamWordAnalysis(simp: string, trad?: string): AsyncGenerator<string> {
-    const { key, model } = getConfig();
-    if (!key) throw new Error("NEXT_PUBLIC_GROQ_API_KEY chưa được cấu hình");
-
-    const template = await loadPromptTemplate();
-    const tradLine = trad && trad !== simp ? `\n- Traditional: {{trad}}` : "";
-    const prompt = template
-        .replace(/\{\{simp\}\}/g, simp)
-        .replace(/\{\{trad\}\}/g, trad ?? simp)
-        .replace(/\{\{trad_line\}\}/g, tradLine);
-
-    const res = await fetch(GROQ_API_URL, {
+    const res = await fetch("/api/ai/stream", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
-        },
-        body: JSON.stringify({
-            model,
-            stream: true,
-            temperature: 0,
-            max_tokens: 16384,
-            messages: [{ role: "user", content: prompt }],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ simp, trad }),
     });
 
     if (!res.ok) {
         const err = await res.text();
-        throw new Error(`Groq API lỗi ${res.status}: ${err}`);
+        throw new Error(`Lỗi ${res.status}: ${err}`);
     }
 
     const reader = res.body?.getReader();
