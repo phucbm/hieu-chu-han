@@ -12,8 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import pkg from "../../package.json";
 
-const WEBHOOK_URL = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL ?? "";
-
 interface ReportIssueDialogProps {
   children: React.ReactNode;
   url?: string;
@@ -30,12 +28,12 @@ export function ReportIssueDialog({ children, url }: ReportIssueDialogProps) {
     if (!message.trim()) return;
     setStatus("sending");
     const footer = [url ? `<${url}>` : null, `\`v${pkg.version}\``].filter(Boolean).join("  ");
-    const contentFinal = `${message.trim()}\n\n${footer}`;
+    const content = `${message.trim()}\n\n${footer}`;
     try {
-      const res = await fetch(WEBHOOK_URL, {
+      const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: contentFinal }),
+        body: JSON.stringify({ content }),
       });
       if (!res.ok) throw new Error();
       setStatus("success");

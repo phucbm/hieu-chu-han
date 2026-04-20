@@ -9,6 +9,7 @@
 
 import { AppLogo } from "@/components/layout/AppLogo";
 import { SearchBox } from "@/components/search/SearchBox";
+import { AuthButton } from "@/components/auth/AuthButton";
 import type { WordEntry } from "@/core/types";
 import type { ViewedWord } from "@/hooks/useViewedWords";
 
@@ -54,8 +55,9 @@ export function AppSidebar({
         />
       </div>
 
-      {/* Badge — pinned at bottom */}
-      <div className="px-4 py-4 border-t shrink-0 flex justify-center">
+      {/* Auth + Badge — pinned at bottom */}
+      <div className="px-4 py-4 border-t shrink-0 flex flex-col items-center gap-3">
+        <AuthButton />
         <a href="https://launch.j2team.dev/products/hieu-chu-han?utm_source=badge-launched&utm_medium=badge&utm_campaign=badge-hieu-chu-han" target="_blank" rel="noopener noreferrer">
           <img src="https://launch.j2team.dev/badge/hieu-chu-han/light" alt="Hiểu Chữ Hán - Launched on J2TEAM Launch" width="250" height="54" loading="lazy" />
         </a>
