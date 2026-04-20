@@ -3,14 +3,16 @@
 /**
  * useViewedWords — Lịch sử từ đã xem
  *
- * - Guest (not signed in): persists in localStorage under 'hch_viewed_words'
- * - Signed in: reads/writes Turso via server actions; on first sign-in merges
- *   local history into the cloud then switches to cloud-only reads.
+ * - Guest: persists in localStorage ('hch_viewed_words'), minimal shape
+ * - Signed in: reads/writes Turso via server actions
+ * - On sign-in: merges local history into Turso then switches to cloud
+ *
+ * Display data (trad, pinyin, definition) is NOT stored here — it is looked
+ * up from the client dictionary in ViewedWordList at render time.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
-import type { WordEntry } from "@/core/types";
 import {
   getViewedWords,
   upsertViewedWord,
@@ -20,17 +22,11 @@ import {
 } from "@/app/actions/history";
 
 export interface ViewedWord {
+  id?: string;           // UUID from Turso (absent for guests)
   simp: string;
-  trad?: string;
-  pinyin?: string;
-  sinoViet?: string;
-  entry?: WordEntry;
-  /** ISO datetime of first view */
+  viewCount: number;
   firstViewedAt: string;
-  /** ISO datetime of most recent view */
   lastViewedAt: string;
-  /** Every view datetime (for future stats) */
-  viewedAt: string[];
 }
 
 const STORAGE_KEY = "hch_viewed_words";
@@ -38,7 +34,15 @@ const STORAGE_KEY = "hch_viewed_words";
 function readLocalStorage(): ViewedWord[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ViewedWord[]) : [];
+    if (!raw) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (JSON.parse(raw) as any[]).map((w) => ({
+      simp: w.simp as string,
+      // Migrate from old shape that had viewedAt: string[]
+      viewCount: (w.viewCount as number | undefined) ?? (w.viewedAt as string[] | undefined)?.length ?? 1,
+      firstViewedAt: w.firstViewedAt as string,
+      lastViewedAt: w.lastViewedAt as string,
+    }));
   } catch {
     return [];
   }
@@ -55,19 +59,14 @@ function writeLocalStorage(words: ViewedWord[]) {
 export function useViewedWords() {
   const { userId, isLoaded } = useAuth();
   const [viewedWords, setViewedWords] = useState<ViewedWord[]>([]);
-
-  // Track previous userId to detect sign-in transition
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   // ── Hydrate on mount / userId change ──────────────────────────────────────
   useEffect(() => {
     if (!isLoaded) return;
-
     if (userId) {
-      // Signed in: fetch from Turso
       getViewedWords().then(setViewedWords);
     } else {
-      // Guest: hydrate from localStorage
       setViewedWords(readLocalStorage());
     }
   }, [userId, isLoaded]);
@@ -75,56 +74,43 @@ export function useViewedWords() {
   // ── Merge localStorage → Turso on sign-in ─────────────────────────────────
   useEffect(() => {
     if (!isLoaded) return;
-    const wasGuest = prevUserIdRef.current === null;
-    const isNowSignedIn = !!userId;
-
-    if (wasGuest && isNowSignedIn) {
+    if (prevUserIdRef.current === null && !!userId) {
       const local = readLocalStorage();
       if (local.length > 0) {
         mergeViewedWords(local).then(setViewedWords);
       }
     }
-
     prevUserIdRef.current = userId ?? null;
   }, [userId, isLoaded]);
 
   // ── Add / update ───────────────────────────────────────────────────────────
   const addViewedWord = useCallback(
-    (item: Omit<ViewedWord, "firstViewedAt" | "lastViewedAt" | "viewedAt">) => {
+    (simp: string) => {
       if (userId) {
-        upsertViewedWord(item).then((updated) => {
+        upsertViewedWord(simp).then((updated) => {
           if (!updated) return;
           setViewedWords((prev) => [
             updated,
-            ...prev.filter((w) => w.simp !== item.simp),
+            ...prev.filter((w) => w.simp !== simp),
           ]);
         });
       } else {
         setViewedWords((prev) => {
           const now = new Date().toISOString();
-          const existing = prev.find((w) => w.simp === item.simp);
-          let next: ViewedWord[];
-
-          if (existing) {
-            const updated: ViewedWord = {
-              ...existing,
-              ...item,
-              lastViewedAt: now,
-              viewedAt: [...existing.viewedAt, now],
-            };
-            next = [updated, ...prev.filter((w) => w.simp !== item.simp)];
-          } else {
-            next = [
-              {
-                ...item,
-                firstViewedAt: now,
-                lastViewedAt: now,
-                viewedAt: [now],
-              },
-              ...prev,
-            ];
-          }
-
+          const existing = prev.find((w) => w.simp === simp);
+          const next: ViewedWord[] = existing
+            ? [
+                {
+                  ...existing,
+                  viewCount: existing.viewCount + 1,
+                  lastViewedAt: now,
+                },
+                ...prev.filter((w) => w.simp !== simp),
+              ]
+            : [
+                { simp, viewCount: 1, firstViewedAt: now, lastViewedAt: now },
+                ...prev,
+              ];
           writeLocalStorage(next);
           return next;
         });
@@ -136,16 +122,12 @@ export function useViewedWords() {
   // ── Remove ─────────────────────────────────────────────────────────────────
   const removeViewedWord = useCallback(
     (simp: string) => {
-      if (userId) {
-        removeViewedWordAction(simp);
-      } else {
-        setViewedWords((prev) => {
-          const next = prev.filter((w) => w.simp !== simp);
-          writeLocalStorage(next);
-          return next;
-        });
-      }
-      setViewedWords((prev) => prev.filter((w) => w.simp !== simp));
+      if (userId) removeViewedWordAction(simp);
+      setViewedWords((prev) => {
+        const next = prev.filter((w) => w.simp !== simp);
+        if (!userId) writeLocalStorage(next);
+        return next;
+      });
     },
     [userId]
   );
@@ -155,11 +137,7 @@ export function useViewedWords() {
     if (userId) {
       clearViewedWordsAction();
     } else {
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        // Ignore
-      }
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
     }
     setViewedWords([]);
   }, [userId]);

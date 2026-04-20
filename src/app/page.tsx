@@ -92,13 +92,7 @@ export default function HomePage() {
                 if (entries[0]) {
                     const tab = preferredTab ?? wordKey(entries[0]);
                     setActiveTab(tab);
-                    addViewedWord({
-                        simp: wordKey(entries[0]),
-                        trad: entries[0].trad,
-                        pinyin: entries[0].pinyin,
-                        sinoViet: entries[0].sinoVietnamese || undefined,
-                        entry: entries[0],
-                    });
+                    addViewedWord(wordKey(entries[0]));
                     const defaultTab = wordKey(entries[0]);
                     const url = tab === defaultTab
                         ? `?word=${encodeURIComponent(simp)}`

@@ -1,7 +1,5 @@
 import { createClient } from "@libsql/client";
 
-// Singleton client — reused across server action invocations in the same process.
-// Returns null when env vars are not configured (dev without Turso set up).
 function createTursoClient() {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -11,21 +9,20 @@ function createTursoClient() {
 
 export const db = createTursoClient();
 
-/** Ensures the viewed_words table exists. Call once at app startup or in a migration. */
+// Run once per process — no-ops on subsequent cold starts thanks to IF NOT EXISTS / IF EXISTS
 export async function initSchema() {
   if (!db) return;
+  // Drop old table from initial implementation
+  await db.execute(`DROP TABLE IF EXISTS viewed_words`);
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS viewed_words (
-      user_id        TEXT NOT NULL,
-      simp           TEXT NOT NULL,
-      trad           TEXT,
-      pinyin         TEXT,
-      sino_viet      TEXT,
-      entry_json     TEXT,
+    CREATE TABLE IF NOT EXISTS user_words (
+      id              TEXT PRIMARY KEY,
+      user_id         TEXT NOT NULL,
+      simp            TEXT NOT NULL,
+      view_count      INTEGER NOT NULL DEFAULT 1,
       first_viewed_at TEXT NOT NULL,
       last_viewed_at  TEXT NOT NULL,
-      viewed_at_json  TEXT NOT NULL DEFAULT '[]',
-      PRIMARY KEY (user_id, simp)
+      UNIQUE (user_id, simp)
     )
   `);
 }
