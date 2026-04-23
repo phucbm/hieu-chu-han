@@ -1,171 +1,223 @@
 "use client";
 
-import {useState} from "react";
+import { useState, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import {useLiveQuery} from "dexie-react-hooks";
-import {Button} from "@/components/ui/button";
-import {streamWordAnalysis} from "@/lib/groq";
-import {db} from "@/lib/db";
-import {getDailyLimit, getRemainingCalls, getResetAt, recordAiCall} from "@/lib/aiRateLimit";
-import {trackAiCall} from "@/core/pwa";
-import {BotMessageSquare, Check, Copy, Loader2} from "lucide-react";
-import {MovingBorder} from "@/components/phucbm/moving-border";
+import { useAuth } from "@clerk/nextjs";
+import { SignUpButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { streamWordAnalysis } from "@/lib/groq";
+import {
+  getAiExplanation,
+  saveAiExplanation,
+  getAiUsageStatus,
+  type AiExplanation,
+} from "@/app/actions/aiExplanation";
+import { GUEST_DAILY_LIMIT, USER_DAILY_LIMIT } from "@/lib/aiConstants";
+import { trackAiCall } from "@/core/pwa";
+import { BotMessageSquare, Check, Copy, Loader2 } from "lucide-react";
+import { MovingBorder } from "@/components/phucbm/moving-border";
 
-function resetIn(resetAt: number): string {
-    const ms = resetAt - Date.now();
-    if (ms <= 0) return "ngay bây giờ";
-    const totalMin = Math.ceil(ms / 60_000);
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    if (h > 0 && m > 0) return `${h} giờ ${m} phút`;
-    if (h > 0) return `${h} giờ`;
-    return `${m} phút`;
-}
-
-function relativeTime(ts: number): string {
-    const diff = Math.floor((Date.now() - ts) / 1000);
-    if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))} phút trước`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-    return new Date(ts).toLocaleString("vi-VN", {dateStyle: "short", timeStyle: "short"});
+function relativeTime(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  return new Date(iso).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
 }
 
 interface WordAIExplanationProps {
-    simp: string;
-    trad?: string;
+  simp: string;
+  trad?: string;
 }
 
 type Status = "idle" | "loading" | "streaming" | "done" | "error";
 
-export function WordAIExplanation({simp, trad}: WordAIExplanationProps) {
-    const [status, setStatus] = useState<Status>("idle");
-    const [streamContent, setStreamContent] = useState("");
-    const [error, setError] = useState("");
-    const [copied, setCopied] = useState(false);
+interface UsageStatus {
+  remaining: number;
+  limit: number;
+  isSignedIn: boolean;
+}
 
-    const cached = useLiveQuery(() => db.aiExplanations.get(simp), [simp]);
-    const remaining = useLiveQuery(() => getRemainingCalls(), [status]);
-    const resetAt = useLiveQuery(() => getResetAt(), [status]);
+export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
+  const { isLoaded, isSignedIn, userId } = useAuth();
 
-    const limit = getDailyLimit();
-    const isLimited = remaining === 0;
+  const [status, setStatus] = useState<Status>("idle");
+  const [streamContent, setStreamContent] = useState("");
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [cached, setCached] = useState<AiExplanation | null | undefined>(undefined);
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
 
-    const isRunning = status === "loading" || status === "streaming";
-    const content = isRunning ? streamContent : (cached?.content ?? streamContent);
-    const hasContent = !!content;
+  // Guest call count tracked in-memory per session (soft gate, server is backstop)
+  const [guestCalls, setGuestCalls] = useState(0);
 
-    async function handleGenerate() {
-        const rem = await getRemainingCalls();
-        if (rem !== null && rem <= 0) {
-            setError("Đã dùng hết lượt hôm nay.");
-            return;
-        }
+  const refreshUsage = useCallback(async () => {
+    const u = await getAiUsageStatus();
+    setUsage(u);
+  }, []);
 
-        setStatus("loading");
-        setStreamContent("");
-        setError("");
+  useEffect(() => {
+    setCached(undefined);
+    setStatus("idle");
+    setStreamContent("");
+    setError("");
 
-        try {
-            const stream = streamWordAnalysis(simp, trad);
-            setStatus("streaming");
-            await recordAiCall();
+    getAiExplanation(simp).then(setCached);
+  }, [simp]);
 
-            let full = "";
-            for await (const chunk of stream) {
-                full += chunk;
-                setStreamContent(full);
-            }
+  useEffect(() => {
+    if (isLoaded) refreshUsage();
+  }, [isLoaded, refreshUsage]);
 
-            await db.aiExplanations.put({simp, content: full, model: "groq", generatedAt: Date.now()});
-            void trackAiCall();
+  const isRunning = status === "loading" || status === "streaming";
+  const content = isRunning ? streamContent : (cached?.content ?? streamContent);
+  const hasContent = !!content;
 
-            setStatus("done");
-            setStreamContent("");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
-            setStatus("error");
-        }
+  const guestRemaining = GUEST_DAILY_LIMIT - guestCalls;
+  const remaining = isSignedIn ? (usage?.remaining ?? null) : guestRemaining;
+  const limit = isSignedIn ? USER_DAILY_LIMIT : GUEST_DAILY_LIMIT;
+  const isLimited = remaining !== null && remaining <= 0;
+
+  async function handleGenerate() {
+    if (!isSignedIn && guestRemaining <= 0) {
+      setError(`Đã dùng hết ${GUEST_DAILY_LIMIT} lượt hôm nay.`);
+      return;
     }
 
-    async function handleCopy() {
-        await navigator.clipboard.writeText(content);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    setStatus("loading");
+    setStreamContent("");
+    setError("");
+
+    try {
+      const stream = streamWordAnalysis(simp, trad);
+      setStatus("streaming");
+
+      if (!isSignedIn) setGuestCalls((n) => n + 1);
+
+      let full = "";
+      for await (const chunk of stream) {
+        full += chunk;
+        setStreamContent(full);
+      }
+
+      await saveAiExplanation(simp, full, "groq");
+      void trackAiCall();
+
+      // Refresh cached explanation and usage
+      const [fresh, freshUsage] = await Promise.all([
+        getAiExplanation(simp),
+        getAiUsageStatus(),
+      ]);
+      setCached(fresh);
+      setUsage(freshUsage);
+
+      setStatus("done");
+      setStreamContent("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định.");
+      setStatus("error");
     }
+  }
 
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <p className="text-sm">Giải thích bằng AI</p>
-                <div className="flex items-center gap-0.5">
-                    {hasContent && !isRunning && (
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleCopy}
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="Sao chép"
-                            aria-label="Sao chép nội dung"
-                        >
-                            {copied ? <Check className="h-3.5 w-3.5"/> : <Copy className="h-3.5 w-3.5"/>}
-                        </Button>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                        {!isRunning && (
-                            <span className={`text-xs tabular-nums ${isLimited ? "text-destructive" : "text-muted-foreground"}`}>
-                                {isLimited
-                                    ? `reset in ${resetAt ? resetIn(resetAt) : "…"}`
-                                    : `${remaining ?? "…"}/${limit} lượt`}
-                            </span>
-                        )}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleGenerate}
-                            disabled={isRunning || isLimited}
-                            className="gap-1.5 text-xs h-7"
-                        >
-                            {isRunning ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin"/>
-                            ) : (
-                                <BotMessageSquare className="h-3.5 w-3.5"/>
-                            )}
-                            {isRunning ? "Đang xử lý..." : cached ? "Tạo lại" : "Phân tích"}
-                        </Button>
-                    </div>
-                </div>
-            </div>
+  async function handleCopy() {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
-            {status === "error" && (
-                <p className="text-sm text-destructive">{error}</p>
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm">Giải thích bằng AI</p>
+        <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1.5">
+            {!isRunning && remaining !== null && (
+              <span className={`text-xs tabular-nums ${isLimited ? "text-destructive" : "text-muted-foreground"}`}>
+                {remaining}/{limit} lượt
+              </span>
             )}
-
-            {hasContent && (
-                <MovingBorder className="overflow-hidden" radius={15} borderWidth={1} gradientWidth={800} duration={3}
-                              colors={["#005aff", "#4486ff", "#cad3ff"]}>
-                    <div className="bg-stone-100 p-4 flex flex-col gap-3">
-                        <div className="prose prose-sm prose-stone max-w-none
-                        prose-headings:font-semibold
-                        prose-h2:text-base prose-h2:mt-0
-                        prose-h3:text-sm prose-h3:mt-3 prose-h3:mb-1
-                        prose-p:my-1 prose-p:text-sm
-                        prose-li:text-sm prose-li:my-0
-                        prose-ul:my-1 prose-ul:pl-4
-                        prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-stone-400 prose-blockquote:pl-3 prose-blockquote:text-stone-600
-                        prose-strong:font-semibold
-                        prose-a:text-primary prose-a:no-underline hover:prose-a:no-underline">
-                            <ReactMarkdown>{content}</ReactMarkdown>
-                        </div>
-                        <div className="flex items-center justify-between border-t border-stone-200 pt-2">
-                            <p className="text-xs text-muted-foreground">
-                                AI{cached && !isRunning ? ` · ${relativeTime(cached.generatedAt)}` : ""} - nội dung được
-                                tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
-                            </p>
-                        </div>
-                    </div>
-                </MovingBorder>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGenerate}
+              disabled={isRunning || isLimited}
+              className="gap-1.5 text-xs h-7"
+            >
+              {isRunning ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <BotMessageSquare className="h-3.5 w-3.5" />
+              )}
+              {isRunning ? "Đang xử lý..." : cached ? "Tạo lại" : "Phân tích"}
+            </Button>
+          </div>
         </div>
-    );
+      </div>
+
+      {status === "error" && error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
+
+      {isLimited && !isSignedIn && (
+        <div className="flex items-center justify-between rounded-md border border-dashed px-3 py-2 text-sm">
+          <span className="text-muted-foreground">
+            Tạo tài khoản để dùng thêm {USER_DAILY_LIMIT} lượt mỗi ngày
+          </span>
+          <SignUpButton mode="modal">
+            <Button variant="default" size="sm" className="text-xs h-7 ml-3 shrink-0">
+              Đăng ký
+            </Button>
+          </SignUpButton>
+        </div>
+      )}
+
+      {hasContent && (
+        <MovingBorder
+          className="overflow-hidden"
+          radius={15}
+          borderWidth={1}
+          gradientWidth={800}
+          duration={3}
+          colors={["#005aff", "#4486ff", "#cad3ff"]}
+        >
+          <div className="bg-stone-100 p-4 flex flex-col gap-3">
+            <div className="relative">
+              {!isRunning && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopy}
+                  className="absolute top-0 right-0 h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title="Sao chép"
+                  aria-label="Sao chép nội dung"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              )}
+            <div className="prose prose-sm prose-stone max-w-none
+              prose-headings:font-semibold
+              prose-h2:text-base prose-h2:mt-0
+              prose-h3:text-sm prose-h3:mt-3 prose-h3:mb-1
+              prose-p:my-1 prose-p:text-sm
+              prose-li:text-sm prose-li:my-0
+              prose-ul:my-1 prose-ul:pl-4
+              prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-stone-400 prose-blockquote:pl-3 prose-blockquote:text-stone-600
+              prose-strong:font-semibold
+              prose-a:text-primary prose-a:no-underline hover:prose-a:no-underline">
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-stone-200 pt-2">
+              <p className="text-xs text-muted-foreground">
+                AI{cached && !isRunning
+                  ? ` · ${relativeTime(cached.generatedAt)} · ${cached.userId === userId ? "bởi bạn" : "bởi một bạn học khác"}`
+                  : ""} - nội dung được tạo bởi AI, có thể không chính xác và chỉ để tham khảo.
+              </p>
+            </div>
+          </div>
+        </MovingBorder>
+      )}
+    </div>
+  );
 }

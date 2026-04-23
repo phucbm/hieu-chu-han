@@ -1,55 +1,121 @@
 import { NextRequest } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
+import { auth } from "@clerk/nextjs/server";
+import { db, initSchema } from "@/lib/turso";
+import { GUEST_DAILY_LIMIT, USER_DAILY_LIMIT, AI_WINDOW_MS } from "@/lib/aiConstants";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+let schemaReady = false;
+
+async function ensureSchema() {
+  if (!schemaReady && db) {
+    await initSchema();
+    schemaReady = true;
+  }
+}
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
 export async function POST(req: NextRequest) {
-    const key = process.env.GROQ_API_KEY;
-    const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+  const key = process.env.GROQ_API_KEY;
+  const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
-    if (!key) {
-        return new Response("AI not configured", { status: 503 });
+  if (!key) {
+    return new Response("AI chưa được cấu hình.", { status: 503 });
+  }
+
+  const { simp, trad } = await req.json();
+  if (!simp || typeof simp !== "string") {
+    return new Response("Dữ liệu không hợp lệ.", { status: 400 });
+  }
+
+  const { userId } = await auth();
+  await ensureSchema();
+
+  const cutoff = new Date(Date.now() - AI_WINDOW_MS).toISOString();
+
+  if (userId) {
+    // Logged-in: enforce 100/day via Turso
+    if (db) {
+      const result = await db.execute({
+        sql: "SELECT COUNT(*) as count FROM ai_usage_log WHERE user_id = ? AND called_at > ?",
+        args: [userId, cutoff],
+      });
+      const count = (result.rows[0] as Record<string, unknown>).count as number;
+      if (count >= USER_DAILY_LIMIT) {
+        return new Response(
+          `Đã dùng hết ${USER_DAILY_LIMIT} lượt AI hôm nay. Vui lòng thử lại sau 24 giờ.`,
+          { status: 429 }
+        );
+      }
+      await db.execute({
+        sql: "INSERT INTO ai_usage_log (id, user_id, called_at) VALUES (?, ?, ?)",
+        args: [crypto.randomUUID(), userId, new Date().toISOString()],
+      });
     }
-
-    const { simp, trad } = await req.json();
-    if (!simp || typeof simp !== "string") {
-        return new Response("Invalid body", { status: 400 });
+  } else {
+    // Guest: enforce 10/day by IP as server-side backstop
+    if (db) {
+      const ip = getClientIp(req);
+      const result = await db.execute({
+        sql: "SELECT COUNT(*) as count FROM ai_usage_log WHERE user_id = ? AND called_at > ?",
+        args: [`ip:${ip}`, cutoff],
+      });
+      const count = (result.rows[0] as Record<string, unknown>).count as number;
+      if (count >= GUEST_DAILY_LIMIT * 2) {
+        return new Response(
+          `Đã vượt giới hạn. Tạo tài khoản để dùng thêm ${USER_DAILY_LIMIT} lượt mỗi ngày.`,
+          { status: 429 }
+        );
+      }
+      await db.execute({
+        sql: "INSERT INTO ai_usage_log (id, user_id, called_at) VALUES (?, ?, ?)",
+        args: [crypto.randomUUID(), `ip:${ip}`, new Date().toISOString()],
+      });
     }
+  }
 
-    const templatePath = path.join(process.cwd(), "public/prompts/word-analysis.md");
-    const template = await readFile(templatePath, "utf-8");
-    const tradLine = trad && trad !== simp ? `\n- Traditional: ${trad}` : "";
-    const prompt = template
-        .replace(/\{\{simp\}\}/g, simp)
-        .replace(/\{\{trad\}\}/g, trad ?? simp)
-        .replace(/\{\{trad_line\}\}/g, tradLine);
+  const templatePath = path.join(process.cwd(), "public/prompts/word-analysis.md");
+  const template = await readFile(templatePath, "utf-8");
+  const tradLine = trad && trad !== simp ? `\n- Traditional: ${trad}` : "";
+  const prompt = template
+    .replace(/\{\{simp\}\}/g, simp)
+    .replace(/\{\{trad\}\}/g, trad ?? simp)
+    .replace(/\{\{trad_line\}\}/g, tradLine);
 
-    const upstream = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
-        },
-        body: JSON.stringify({
-            model,
-            stream: true,
-            temperature: 0,
-            max_tokens: 16384,
-            messages: [{ role: "user", content: prompt }],
-        }),
-    });
+  const upstream = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      temperature: 0,
+      max_tokens: 16384,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
 
-    if (!upstream.ok) {
-        const err = await upstream.text();
-        return new Response(`Groq error ${upstream.status}: ${err}`, { status: 502 });
-    }
+  if (!upstream.ok) {
+    const err = await upstream.text();
+    return new Response(`Lỗi từ GROQ (${upstream.status}): ${err}`, { status: 502 });
+  }
 
-    return new Response(upstream.body, {
-        headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
-        },
-    });
+  return new Response(upstream.body, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }
