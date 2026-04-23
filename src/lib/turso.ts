@@ -25,4 +25,29 @@ export async function initSchema() {
       UNIQUE (user_id, simp)
     )
   `);
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ai_explanations (
+      simp         TEXT NOT NULL,
+      user_id      TEXT NOT NULL,
+      content      TEXT NOT NULL,
+      model        TEXT NOT NULL,
+      generated_at TEXT NOT NULL,
+      PRIMARY KEY (simp, user_id)
+    )
+  `);
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_ai_explanations_simp_generated
+    ON ai_explanations(simp, generated_at DESC)
+  `);
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ai_usage_log (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL,
+      called_at  TEXT NOT NULL
+    )
+  `);
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_ai_usage_log_user_called
+    ON ai_usage_log(user_id, called_at)
+  `);
 }
