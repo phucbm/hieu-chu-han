@@ -26,40 +26,40 @@ import pkg from "../../../../package.json"
 const navMain = [
   {
     title: "Trang chủ",
-    url: "/v2",
+    url: "/",
     icon: <HomeIcon />,
     isActive: true,
     items: [],
   },
-  {
-    title: "Từ điển",
-    url: "#",
-    icon: <BookOpenIcon />,
-    items: [
-      { title: "Tra từ", url: "#" },
-      { title: "Lịch sử tra cứu", url: "#" },
-      { title: "Đã lưu", url: "#" },
-    ],
-  },
-  {
-    title: "Bộ thủ",
-    url: "#",
-    icon: <Grid3X3Icon />,
-    items: [
-      { title: "214 bộ thủ", url: "#" },
-      { title: "Tìm theo bộ", url: "#" },
-    ],
-  },
-  {
-    title: "HSK",
-    url: "#",
-    icon: <SparklesIcon />,
-    items: [
-      { title: "HSK 1", url: "#" },
-      { title: "HSK 2", url: "#" },
-      { title: "HSK 3", url: "#" },
-    ],
-  },
+  // {
+  //   title: "Từ điển",
+  //   url: "#",
+  //   icon: <BookOpenIcon />,
+  //   items: [
+  //     { title: "Tra từ", url: "#" },
+  //     { title: "Lịch sử tra cứu", url: "#" },
+  //     { title: "Đã lưu", url: "#" },
+  //   ],
+  // },
+  // {
+  //   title: "Bộ thủ",
+  //   url: "#",
+  //   icon: <Grid3X3Icon />,
+  //   items: [
+  //     { title: "214 bộ thủ", url: "#" },
+  //     { title: "Tìm theo bộ", url: "#" },
+  //   ],
+  // },
+  // {
+  //   title: "HSK",
+  //   url: "#",
+  //   icon: <SparklesIcon />,
+  //   items: [
+  //     { title: "HSK 1", url: "#" },
+  //     { title: "HSK 2", url: "#" },
+  //     { title: "HSK 3", url: "#" },
+  //   ],
+  // },
 ]
 
 const navSecondary = [
