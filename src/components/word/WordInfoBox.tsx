@@ -21,7 +21,7 @@ export function WordInfoBox({ entry }: WordInfoBoxProps) {
 
   return (
     <>
-      <div className="relative w-full rounded-xl bg-stone-100 p-5">
+      <div className="relative w-full rounded-xl bg-muted p-5">
 
         {/* Giản thể / Phồn thể */}
           <div className="flex flex-wrap justify-evenly gap-3 mb-5">

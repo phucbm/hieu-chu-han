@@ -60,7 +60,7 @@ export function StrokeBox({ simp, trad, defaultTrad = false }: StrokeBoxProps) {
   }, [character]);
 
   return (
-    <div className={`rounded-xl bg-stone-100 p-4 flex flex-col items-center gap-3 relative ${available ? "" : "hidden"}`}>
+    <div className={`rounded-xl bg-muted p-4 flex flex-col items-center gap-3 relative ${available ? "" : "hidden"}`}>
       <p className="text-sm text-muted-foreground text-center">Nét chữ</p>
       <div
         ref={containerRef}

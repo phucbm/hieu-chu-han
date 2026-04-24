@@ -24,7 +24,7 @@ export function EtymologySection({ entry, onWordClick }: EtymologySectionProps) 
                 Phân tích chữ
             </p>
 
-            <div className="rounded-xl p-4 bg-stone-100 flex flex-col gap-3">
+            <div className="rounded-xl p-4 bg-muted flex flex-col gap-3">
 
                 {etymology.notes && (
                     <p className="text-sm italic">{etymology.notes}</p>

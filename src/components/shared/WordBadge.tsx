@@ -17,8 +17,8 @@ interface WordBadgeProps {
 export function WordBadge({entry, onClick, className}: WordBadgeProps) {
     const {simp, pinyin, sinoVietnamese} = entry;
   const base =
-      "inline-flex flex-col items-center rounded-lg border px-3 py-1.5 text-center min-w-[3rem] bg-white";
-    const interactive = "cursor-pointer hover:bg-blue-50 transition-colors";
+      "inline-flex flex-col items-center rounded-lg border px-3 py-1.5 text-center min-w-[3rem] bg-card";
+    const interactive = "cursor-pointer hover:bg-accent transition-colors";
 
   if (onClick) {
     return (

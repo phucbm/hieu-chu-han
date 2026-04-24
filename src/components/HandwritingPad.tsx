@@ -125,7 +125,7 @@ export function HandwritingPad({
         ref={canvasRef}
         width={CANVAS_SIZE}
         height={CANVAS_SIZE}
-        className="rounded-lg border bg-white cursor-crosshair"
+        className="rounded-lg border bg-card cursor-crosshair"
         style={{ touchAction: "none", width: CANVAS_SIZE, height: CANVAS_SIZE }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

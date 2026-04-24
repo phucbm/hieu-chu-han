@@ -199,7 +199,7 @@ export function MovingBorder({
             </div>
 
             {/*inner*/}
-            <div className={cn(`inner relative z-30 bg-white`, className)}
+            <div className={cn(`inner relative z-30 bg-background`, className)}
                  style={{
                      borderRadius: `${effectiveRadius}px`,
                  }}>

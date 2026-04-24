@@ -180,7 +180,7 @@ export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
           duration={3}
           colors={["#005aff", "#4486ff", "#cad3ff"]}
         >
-          <div className="bg-stone-100 p-4 flex flex-col gap-3">
+          <div className="bg-muted p-4 flex flex-col gap-3">
             <div className="relative">
               {!isRunning && (
                 <Button
@@ -195,20 +195,20 @@ export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 </Button>
               )}
-            <div className="prose prose-sm prose-stone max-w-none
+            <div className="prose prose-sm prose-neutral max-w-none
               prose-headings:font-semibold
               prose-h2:text-base prose-h2:mt-0
               prose-h3:text-sm prose-h3:mt-3 prose-h3:mb-1
               prose-p:my-1 prose-p:text-sm
               prose-li:text-sm prose-li:my-0
               prose-ul:my-1 prose-ul:pl-4
-              prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-stone-400 prose-blockquote:pl-3 prose-blockquote:text-stone-600
+              prose-blockquote:text-sm prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-border prose-blockquote:pl-3 prose-blockquote:text-muted-foreground
               prose-strong:font-semibold
               prose-a:text-primary prose-a:no-underline hover:prose-a:no-underline">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
             </div>
-            <div className="flex items-center justify-between border-t border-stone-200 pt-2">
+            <div className="flex items-center justify-between border-t border-border pt-2">
               <p className="text-xs text-muted-foreground">
                 AI{cached && !isRunning
                   ? ` · ${relativeTime(cached.generatedAt)} · ${cached.userId === userId ? "bởi bạn" : "bởi một bạn học khác"}`
