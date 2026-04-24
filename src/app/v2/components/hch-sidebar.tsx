@@ -82,7 +82,7 @@ export function HchSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<a href="/v2" />}>
+            <SidebarMenuButton size="lg" render={<a href="/" />}>
               <Image
                 src="/icon.png"
                 alt="Hiểu Chữ Hán"
