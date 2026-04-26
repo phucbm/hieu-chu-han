@@ -13,6 +13,7 @@
 
 import { X, Eye } from "lucide-react";
 import type { WordEntry } from "@/core/types";
+import { AddToGroupButton } from "@/components/notebook/AddToGroupButton";
 
 interface WordRowProps {
   entry: WordEntry;
@@ -21,9 +22,11 @@ interface WordRowProps {
   viewCount?: number;
   /** When provided, shows an X button on row hover */
   onRemove?: () => void;
+  /** When provided, shows an AddToGroupButton on hover */
+  showAddToGroup?: boolean;
 }
 
-export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) {
+export function WordRow({ entry, onSelect, viewCount, onRemove, showAddToGroup = false }: WordRowProps) {
   const { simp, trad, pinyin, definitionVi, definitionsEn, key } = entry;
   const showTrad = trad && trad !== simp;
   // Trad-only entries: show trad first since that's the lookup key
@@ -77,18 +80,27 @@ export function WordRow({ entry, onSelect, viewCount, onRemove }: WordRowProps) 
         </span>
       </button>
 
-      {/* Remove button — visible on group hover */}
-      {onRemove && (
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onRemove}
-          tabIndex={-1}
-          aria-label="Xóa khỏi lịch sử"
-          className="flex items-center px-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+      {/* Action buttons — visible on group hover */}
+      {(showAddToGroup || onRemove) && (
+        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          {showAddToGroup && (
+            <span onMouseDown={(e) => e.preventDefault()}>
+              <AddToGroupButton simp={entry.simp} compact />
+            </span>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onRemove}
+              tabIndex={-1}
+              aria-label="Xóa khỏi lịch sử"
+              className="flex items-center px-2.5 text-muted-foreground hover:text-destructive"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

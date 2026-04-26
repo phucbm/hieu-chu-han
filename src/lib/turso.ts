@@ -25,6 +25,23 @@ export async function initSchema() {
       UNIQUE (user_id, simp)
     )
   `);
+
+  // Extend user_words with notebook columns.
+  // libSQL does not support `ADD COLUMN IF NOT EXISTS` — check via PRAGMA first.
+  const tableInfo = await db.execute(`PRAGMA table_info(user_words)`);
+  const existingCols = new Set(
+    tableInfo.rows.map((r) => (r as Record<string, unknown>).name as string)
+  );
+  for (const [col, def] of [
+    ["group_ids",    "TEXT DEFAULT '[]'"],
+    ["note",         "TEXT"],
+    ["custom_links", "TEXT DEFAULT '[]'"],
+  ] as [string, string][]) {
+    if (!existingCols.has(col)) {
+      await db.execute(`ALTER TABLE user_words ADD COLUMN ${col} ${def}`);
+    }
+  }
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ai_explanations (
       simp         TEXT NOT NULL,
@@ -49,5 +66,56 @@ export async function initSchema() {
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_ai_usage_log_user_called
     ON ai_usage_log(user_id, called_at)
+  `);
+
+  // ── Notebook tables ────────────────────────────────────────────────────────
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notebook_groups (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      title       TEXT NOT NULL,
+      description TEXT,
+      type        TEXT NOT NULL DEFAULT 'manual',
+      sort_order  INTEGER DEFAULT 0,
+      slug        TEXT,
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    )
+  `);
+
+  // Add slug column to existing notebook_groups tables
+  const groupsInfo = await db.execute(`PRAGMA table_info(notebook_groups)`);
+  const groupCols = new Set(
+    groupsInfo.rows.map((r) => (r as Record<string, unknown>).name as string)
+  );
+  if (!groupCols.has("slug")) {
+    await db.execute(`ALTER TABLE notebook_groups ADD COLUMN slug TEXT`);
+  }
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_notebook_groups_user
+    ON notebook_groups(user_id, sort_order)
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notebook_lyrics (
+      id             TEXT PRIMARY KEY,
+      group_id       TEXT NOT NULL UNIQUE REFERENCES notebook_groups(id) ON DELETE CASCADE,
+      content        TEXT NOT NULL,
+      youtube_url    TEXT,
+      translation    TEXT,
+      translated_at  TEXT,
+      auto_extract   INTEGER DEFAULT 0,
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS word_etymology_links (
+      word                 TEXT PRIMARY KEY,
+      etymological_related TEXT DEFAULT '[]',
+      created_at           TEXT NOT NULL,
+      updated_at           TEXT NOT NULL
+    )
   `);
 }

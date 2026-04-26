@@ -1,6 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { useAuth } from "@clerk/nextjs"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { HchNavUser } from "@/components/layout/hch-nav-user"
@@ -13,18 +16,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { HomeIcon, ExternalLinkIcon, MessageCircleIcon } from "lucide-react"
+import { HomeIcon, ExternalLinkIcon, MessageCircleIcon, BookMarkedIcon } from "lucide-react"
+import { getGroups } from "@/app/actions/notebook"
+import type { NotebookGroup } from "@/core/notebook-types"
 import pkg from "../../../package.json"
-
-const navMain = [
-  {
-    title: "Trang chủ",
-    url: "/",
-    icon: <HomeIcon />,
-    isActive: true,
-    items: [],
-  },
-]
 
 const navSecondary = [
   {
@@ -39,7 +34,40 @@ const navSecondary = [
   },
 ]
 
-export function HchSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface HchSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  initialGroups?: NotebookGroup[]
+}
+
+export function HchSidebar({ initialGroups, ...props }: HchSidebarProps) {
+  const { isSignedIn, isLoaded } = useAuth()
+  const pathname = usePathname()
+  const [groups, setGroups] = useState<NotebookGroup[]>(initialGroups ?? [])
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      getGroups().then(setGroups).catch(() => {})
+    } else if (isLoaded) {
+      setGroups([])
+    }
+  }, [isLoaded, isSignedIn])
+
+  const navMain = [
+    {
+      title: "Trang chủ",
+      url: "/",
+      icon: <HomeIcon />,
+      isActive: pathname === "/",
+      items: [],
+    },
+    {
+      title: "Sổ tay",
+      url: "/notebook",
+      icon: <BookMarkedIcon />,
+      isActive: pathname.startsWith("/notebook"),
+      items: groups.map((g) => ({ title: g.title, url: `/notebook/${g.slug}` })),
+    },
+  ]
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
