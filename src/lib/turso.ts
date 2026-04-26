@@ -26,13 +26,20 @@ export async function initSchema() {
     )
   `);
 
-  // Extend user_words with notebook columns (safe to run on existing table)
-  for (const stmt of [
-    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS group_ids    TEXT DEFAULT '[]'`,
-    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS note         TEXT`,
-    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS custom_links TEXT DEFAULT '[]'`,
-  ]) {
-    try { await db.execute(stmt); } catch { /* column already exists */ }
+  // Extend user_words with notebook columns.
+  // libSQL does not support `ADD COLUMN IF NOT EXISTS` — check via PRAGMA first.
+  const tableInfo = await db.execute(`PRAGMA table_info(user_words)`);
+  const existingCols = new Set(
+    tableInfo.rows.map((r) => (r as Record<string, unknown>).name as string)
+  );
+  for (const [col, def] of [
+    ["group_ids",    "TEXT DEFAULT '[]'"],
+    ["note",         "TEXT"],
+    ["custom_links", "TEXT DEFAULT '[]'"],
+  ] as [string, string][]) {
+    if (!existingCols.has(col)) {
+      await db.execute(`ALTER TABLE user_words ADD COLUMN ${col} ${def}`);
+    }
   }
 
   await db.execute(`
