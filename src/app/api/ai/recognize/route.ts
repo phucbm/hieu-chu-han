@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ candidates });
   } catch {
     // Try to extract JSON array from the response if model added extra text
-    const match = raw.match(/\[[\s\S]*?\]/);
+    const match = raw.match(/\["[\s\S]*?"\]/);
     if (match) {
       try {
         const candidates = JSON.parse(match[0]);
