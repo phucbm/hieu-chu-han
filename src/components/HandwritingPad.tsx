@@ -6,9 +6,9 @@
  * Manages its own stroke state internally; notifies parent via callbacks.
  */
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Undo2, Trash2, ExternalLink, BotMessageSquare } from "lucide-react";
+import { Undo2, Trash2, ExternalLink } from "lucide-react";
 
 interface HandwritingPadProps {
   /** Called after each stroke ends (or after undo/clear) with all current strokes as raw pixel coords. */
@@ -17,28 +17,36 @@ interface HandwritingPadProps {
   /** Current stroke count — used to disable Undo when 0. */
   strokeCount: number;
   onUndo: () => void;
-  /** Called with base64 PNG data URL when user requests AI recognition. */
-  onAskAI?: (imageBase64: string) => void;
-  askAILoading?: boolean;
 }
 
 const CANVAS_SIZE = 280;
 const STROKE_COLOR = "#1a1a1a";
 const LINE_WIDTH = 4;
 
-export function HandwritingPad({
+export const HandwritingPad = forwardRef<{ getImageBase64: () => string | null }, HandwritingPadProps>(function HandwritingPad({
   onStrokeEnd,
   onClear,
   strokeCount,
   onUndo,
-  onAskAI,
-  askAILoading,
-}: HandwritingPadProps) {
+}, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  /** All completed strokes — raw pixel coords [[x,y], ...] */
   const strokes = useRef<number[][][]>([]);
-  /** Points in the stroke currently being drawn. */
   const currentStroke = useRef<number[][] | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getImageBase64: () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      const offscreen = document.createElement("canvas");
+      offscreen.width = canvas.width;
+      offscreen.height = canvas.height;
+      const ctx = offscreen.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, offscreen.width, offscreen.height);
+      ctx.drawImage(canvas, 0, 0);
+      return offscreen.toDataURL("image/png");
+    },
+  }));
 
   /** Redraws all completed strokes + the in-progress stroke onto the canvas. */
   const redraw = useCallback(() => {
@@ -111,19 +119,6 @@ export function HandwritingPad({
     onUndo();
     onStrokeEnd(strokes.current);
   }, [redraw, onUndo, onStrokeEnd]);
-
-  const handleAskAI = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !onAskAI) return;
-    const offscreen = document.createElement("canvas");
-    offscreen.width = canvas.width;
-    offscreen.height = canvas.height;
-    const ctx = offscreen.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, offscreen.width, offscreen.height);
-    ctx.drawImage(canvas, 0, 0);
-    onAskAI(offscreen.toDataURL("image/png"));
-  }, [onAskAI]);
 
   const handleOpenAsImage = useCallback(() => {
     const canvas = canvasRef.current;
@@ -198,19 +193,7 @@ export function HandwritingPad({
           <ExternalLink className="h-4 w-4 mr-1" />
           PNG
         </Button>
-        {onAskAI && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAskAI}
-            disabled={strokeCount === 0 || askAILoading}
-          >
-            <BotMessageSquare className="h-4 w-4 mr-1" />
-            {askAILoading ? "Đang hỏi..." : "Hỏi AI"}
-          </Button>
-        )}
       </div>
     </div>
   );
-}
+});
