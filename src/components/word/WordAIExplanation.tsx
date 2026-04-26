@@ -16,6 +16,7 @@ import { GUEST_DAILY_LIMIT, USER_DAILY_LIMIT } from "@/lib/aiConstants";
 import { trackAiCall } from "@/core/pwa";
 import { BotMessageSquare, Check, Copy, Loader2 } from "lucide-react";
 import { MovingBorder } from "@/components/phucbm/moving-border";
+import { AiCreditBadge } from "@/components/shared/AiCreditBadge";
 
 function relativeTime(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -130,10 +131,8 @@ export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
         <p className="text-sm">Giải thích bằng AI</p>
         <div className="flex items-center gap-0.5">
           <div className="flex items-center gap-1.5">
-            {!isRunning && remaining !== null && (
-              <span className={`text-xs tabular-nums ${isLimited ? "text-destructive" : "text-muted-foreground"}`}>
-                {remaining}/{limit} lượt
-              </span>
+            {!isRunning && (
+              <AiCreditBadge remaining={remaining} limit={limit} />
             )}
             <Button
               type="button"

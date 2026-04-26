@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { PenLineIcon, SearchIcon } from "lucide-react"
+import { PenLineIcon, SearchIcon, Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,10 @@ import { searchWords } from "@/app/actions"
 import { HandwritingPad } from "@/components/HandwritingPad"
 import { HandwritingRecognizer, type Candidate } from "@/core/handwriting"
 import { RecentSearch } from "@/components/search/RecentSearch"
+import { AiCreditBadge } from "@/components/shared/AiCreditBadge"
+import { getAiUsageStatus } from "@/app/actions/aiExplanation"
+import { GUEST_DAILY_LIMIT, USER_DAILY_LIMIT } from "@/lib/aiConstants"
+import { useAuth } from "@clerk/nextjs"
 import type { WordEntry } from "@/core/types"
 import type { ViewedWord } from "@/hooks/useViewedWords"
 
@@ -68,6 +72,7 @@ function useIsDesktop() {
 
 export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }: SearchDialogProps) {
   const isDesktop = useIsDesktop()
+  const { isLoaded, isSignedIn } = useAuth()
 
   const [mode, setMode]               = useState<SearchMode>("text")
   const [query, setQuery]             = useState("")
@@ -75,6 +80,11 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
   const [searched, setSearched]       = useState(false)
   const [candidates, setCandidates]   = useState<Candidate[]>([])
   const [strokeCount, setStrokeCount] = useState(0)
+  const [aiCandidates, setAiCandidates] = useState<string[]>([])
+  const [askAILoading, setAskAILoading] = useState(false)
+  const [askAIError, setAskAIError]     = useState("")
+  const [aiUsage, setAiUsage] = useState<{ remaining: number; limit: number } | null>(null)
+  const [guestAICalls, setGuestAICalls] = useState(0)
   const strokesRef = useRef<number[][][]>([])
   const recognizer = useRef<HandwritingRecognizer | null>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
@@ -166,7 +176,51 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
     strokesRef.current = []
     setStrokeCount(0)
     setCandidates([])
+    setAiCandidates([])
+    setAskAIError("")
   }, [])
+
+  // Load credit usage when auth is ready
+  useEffect(() => {
+    if (!isLoaded) return
+    if (isSignedIn) {
+      getAiUsageStatus().then((u) => setAiUsage(u))
+    }
+  }, [isLoaded, isSignedIn])
+
+  const aiRemaining = isSignedIn
+    ? (aiUsage?.remaining ?? null)
+    : Math.max(0, GUEST_DAILY_LIMIT - guestAICalls)
+  const aiLimit = isSignedIn ? USER_DAILY_LIMIT : GUEST_DAILY_LIMIT
+
+  const handleAskAI = useCallback(async (imageBase64: string) => {
+    setAskAILoading(true)
+    setAskAIError("")
+    setAiCandidates([])
+    try {
+      const res = await fetch("/api/ai/recognize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64 }),
+      })
+      if (res.status === 429) {
+        setAskAIError(await res.text())
+        return
+      }
+      if (!res.ok) {
+        setAskAIError("Lỗi kết nối AI.")
+        return
+      }
+      const data = await res.json()
+      setAiCandidates(data.candidates ?? [])
+      if (!isSignedIn) setGuestAICalls((n) => n + 1)
+      if (isSignedIn) getAiUsageStatus().then((u) => setAiUsage(u))
+    } catch {
+      setAskAIError("Lỗi kết nối AI.")
+    } finally {
+      setAskAILoading(false)
+    }
+  }, [isSignedIn])
 
   const body = (
     <>
@@ -273,6 +327,8 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
               onClear={handleClear}
               strokeCount={strokeCount}
               onUndo={handleUndo}
+              onAskAI={handleAskAI}
+              askAILoading={askAILoading}
             />
           </div>
 
@@ -289,6 +345,36 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
                     className="font-chinese text-xl px-2.5 py-1 rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
                   >
                     {c.hanzi}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI recognition results */}
+          {askAILoading && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              AI đang nhận diện...
+            </div>
+          )}
+          {askAIError && (
+            <p className="text-xs text-destructive shrink-0">{askAIError}</p>
+          )}
+          {aiCandidates.length > 0 && (
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">AI gợi ý</p>
+                <AiCreditBadge remaining={aiRemaining} limit={aiLimit} />
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {aiCandidates.map((hanzi) => (
+                  <button
+                    key={hanzi}
+                    onClick={() => handleCandidateClick(hanzi)}
+                    className="font-chinese text-xl px-2.5 py-1 rounded-lg border bg-primary/10 hover:bg-primary/20 transition-colors"
+                  >
+                    {hanzi}
                   </button>
                 ))}
               </div>
