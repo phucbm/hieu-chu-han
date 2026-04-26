@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { HomeIcon, ExternalLinkIcon, MessageCircleIcon } from "lucide-react"
+import { HomeIcon, ExternalLinkIcon, MessageCircleIcon, BookMarkedIcon } from "lucide-react"
 import pkg from "../../../package.json"
 
 const navMain = [
@@ -22,6 +22,13 @@ const navMain = [
     url: "/",
     icon: <HomeIcon />,
     isActive: true,
+    items: [],
+  },
+  {
+    title: "Sổ tay",
+    url: "/notebook",
+    icon: <BookMarkedIcon />,
+    isActive: false,
     items: [],
   },
 ]

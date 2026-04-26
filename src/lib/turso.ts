@@ -25,6 +25,16 @@ export async function initSchema() {
       UNIQUE (user_id, simp)
     )
   `);
+
+  // Extend user_words with notebook columns (safe to run on existing table)
+  for (const stmt of [
+    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS group_ids    TEXT DEFAULT '[]'`,
+    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS note         TEXT`,
+    `ALTER TABLE user_words ADD COLUMN IF NOT EXISTS custom_links TEXT DEFAULT '[]'`,
+  ]) {
+    try { await db.execute(stmt); } catch { /* column already exists */ }
+  }
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ai_explanations (
       simp         TEXT NOT NULL,
@@ -49,5 +59,46 @@ export async function initSchema() {
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_ai_usage_log_user_called
     ON ai_usage_log(user_id, called_at)
+  `);
+
+  // ── Notebook tables ────────────────────────────────────────────────────────
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notebook_groups (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      title       TEXT NOT NULL,
+      description TEXT,
+      type        TEXT NOT NULL DEFAULT 'manual',
+      sort_order  INTEGER DEFAULT 0,
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    )
+  `);
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_notebook_groups_user
+    ON notebook_groups(user_id, sort_order)
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notebook_lyrics (
+      id             TEXT PRIMARY KEY,
+      group_id       TEXT NOT NULL UNIQUE REFERENCES notebook_groups(id) ON DELETE CASCADE,
+      content        TEXT NOT NULL,
+      youtube_url    TEXT,
+      translation    TEXT,
+      translated_at  TEXT,
+      auto_extract   INTEGER DEFAULT 0,
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS word_etymology_links (
+      word                 TEXT PRIMARY KEY,
+      etymological_related TEXT DEFAULT '[]',
+      created_at           TEXT NOT NULL,
+      updated_at           TEXT NOT NULL
+    )
   `);
 }

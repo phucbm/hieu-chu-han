@@ -3,6 +3,7 @@ import { Noto_Serif, Noto_Serif_SC } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { SwAutoUpdate } from "@/components/SwAutoUpdate";
 import { PWATracker } from "@/components/PWATracker";
+import { Toaster } from "@/components/ui/sonner";
 import pkg from "../../package.json";
 import "./globals.css";
 
@@ -72,6 +73,7 @@ export default function RootLayout({
           <SwAutoUpdate />
           <PWATracker />
           {children}
+          <Toaster />
         </ClerkProvider>
       </body>
     </html>

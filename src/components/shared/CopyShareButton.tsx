@@ -17,7 +17,7 @@ export function CopyShareButton({ simp }: CopyShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const url = `${window.location.origin}${window.location.pathname}?word=${encodeURIComponent(simp)}`;
+    const url = `${window.location.origin}/word/${encodeURIComponent(simp)}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
