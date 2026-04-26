@@ -166,7 +166,8 @@ function runSearch(term: string, limit: number): WordEntry[] {
           isSubstringMatch(e.t, t) ||
           isSubstringMatch(e.sp, t) ||
           isSubstringMatch(e.pt, t) ||
-          isSubstringMatch(e.p.toLowerCase(), t)
+          isSubstringMatch(e.p.toLowerCase(), t) ||
+          isSubstringMatch(e.sv, t)
         )
     )
     .map((e) => ({ e, rel: calcRelevance(e, t) }))

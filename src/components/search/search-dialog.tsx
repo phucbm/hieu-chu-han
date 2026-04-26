@@ -202,7 +202,12 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
               ref={inputRef}
               type="text"
               value={query}
-              onChange={(e) => { setQuery(e.target.value); setSearched(false) }}
+              onChange={(e) => {
+                const v = e.target.value
+                setQuery(v)
+                setSearched(false)
+                if (!v) setResults([])
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Nhập chữ Hán, pinyin, Hán Việt..."
               className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1 font-chinese"
