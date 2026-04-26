@@ -77,10 +77,20 @@ export async function initSchema() {
       description TEXT,
       type        TEXT NOT NULL DEFAULT 'manual',
       sort_order  INTEGER DEFAULT 0,
+      slug        TEXT,
       created_at  TEXT NOT NULL,
       updated_at  TEXT NOT NULL
     )
   `);
+
+  // Add slug column to existing notebook_groups tables
+  const groupsInfo = await db.execute(`PRAGMA table_info(notebook_groups)`);
+  const groupCols = new Set(
+    groupsInfo.rows.map((r) => (r as Record<string, unknown>).name as string)
+  );
+  if (!groupCols.has("slug")) {
+    await db.execute(`ALTER TABLE notebook_groups ADD COLUMN slug TEXT`);
+  }
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_notebook_groups_user
     ON notebook_groups(user_id, sort_order)

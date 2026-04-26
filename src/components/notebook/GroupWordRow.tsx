@@ -41,8 +41,8 @@ export function GroupWordRow({ groupId, groupWord, wordDisplay, onRemoved }: Gro
       await updateWordNote(userWord.simp, noteValue);
       toast.success("Đã lưu ghi chú");
       setEditingNote(false);
-    } catch {
-      toast.error("Không thể lưu ghi chú");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setSavingNote(false);
     }

@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { db, initSchema } from "@/lib/turso";
 import { getEntries } from "chinese-lexicon";
+import { generateSlug } from "@/lib/slugify";
 import type { NotebookGroup, NotebookLyrics, UserWordExtended, WordEtymologyLinks } from "@/core/notebook-types";
 
 let schemaReady = false;
@@ -26,6 +27,7 @@ function toGroup(row: Record<string, unknown>): NotebookGroup {
     description: (row.description as string | null) ?? undefined,
     type: (row.type as "manual" | "lyrics") ?? "manual",
     sortOrder: row.sort_order as number,
+    slug: (row.slug as string | null) ?? (row.id as string),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -70,6 +72,19 @@ function parseJsonArray(value: unknown): string[] {
 
 // ── Group CRUD ────────────────────────────────────────────────────────────────
 
+/** Resolve a slug (or UUID fallback for old rows) to a group owned by the current user. */
+export async function getGroupBySlug(slug: string): Promise<NotebookGroup | null> {
+  const { userId } = await auth();
+  if (!userId || !(await ready())) return null;
+
+  const result = await db!.execute({
+    sql: "SELECT * FROM notebook_groups WHERE (slug = ? OR id = ?) AND user_id = ? LIMIT 1",
+    args: [slug, slug, userId],
+  });
+
+  return result.rows[0] ? toGroup(result.rows[0] as Record<string, unknown>) : null;
+}
+
 export async function getGroups(): Promise<NotebookGroup[]> {
   const { userId } = await auth();
   if (!userId || !(await ready())) return [];
@@ -92,6 +107,7 @@ export async function createGroup(
 
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
+  const slug = generateSlug(title);
 
   const maxResult = await db!.execute({
     sql: "SELECT MAX(sort_order) as max_order FROM notebook_groups WHERE user_id = ?",
@@ -100,9 +116,9 @@ export async function createGroup(
   const maxOrder = ((maxResult.rows[0] as Record<string, unknown>).max_order as number | null) ?? -1;
 
   await db!.execute({
-    sql: `INSERT INTO notebook_groups (id, user_id, title, description, type, sort_order, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, userId, title.trim(), description?.trim() ?? null, type, maxOrder + 1, now, now],
+    sql: `INSERT INTO notebook_groups (id, user_id, title, description, type, sort_order, slug, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, userId, title.trim(), description?.trim() ?? null, type, maxOrder + 1, slug, now, now],
   });
 
   const result = await db!.execute({

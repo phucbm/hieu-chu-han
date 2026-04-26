@@ -20,20 +20,12 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Plus, Music, BookOpen } from "lucide-react";
-import { HchSidebar } from "@/components/layout/hch-sidebar";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { GroupCard } from "@/components/notebook/GroupCard";
 import { CreateGroupDialog } from "@/components/notebook/CreateGroupDialog";
 import { toast } from "sonner";
@@ -56,14 +48,13 @@ export default function NotebookPage() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const [groups, setGroups] = useState<NotebookGroup[]>([]);
-  const [wordCounts, setWordCounts] = useState<Record<string, number>>({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createMode, setCreateMode] = useState<"manual" | "lyrics">("manual");
   const [loading, setLoading] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const fetchGroups = useCallback(async () => {
@@ -82,19 +73,17 @@ export default function NotebookPage() {
     description?: string,
     lyricsContent?: string,
     youtubeUrl?: string,
-    autoExtract?: boolean
+    autoExtract?: boolean,
   ) {
+    let group: NotebookGroup | null;
     if (createMode === "lyrics" && lyricsContent) {
-      const group = await createLyricsGroup(title, lyricsContent, youtubeUrl, autoExtract ?? false);
-      if (!group) { toast.error("Không thể tạo nhóm"); return; }
-      setGroups((prev) => [...prev, group]);
-      toast.success(`Đã tạo nhóm "${group.title}"`);
+      group = await createLyricsGroup(title, lyricsContent, youtubeUrl, autoExtract ?? false);
     } else {
-      const group = await createGroup(title, description, "manual");
-      if (!group) { toast.error("Không thể tạo nhóm"); return; }
-      setGroups((prev) => [...prev, group]);
-      toast.success(`Đã tạo nhóm "${group.title}"`);
+      group = await createGroup(title, description, "manual");
     }
+    if (!group) { toast.error("createGroup returned null — check server logs"); return; }
+    setGroups((prev) => [...prev, group!]);
+    toast.success(`Đã tạo nhóm "${group.title}"`);
     setCreateDialogOpen(false);
   }
 
@@ -108,7 +97,6 @@ export default function NotebookPage() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     setGroups((prev) => {
       const oldIndex = prev.findIndex((g) => g.id === active.id);
       const newIndex = prev.findIndex((g) => g.id === over.id);
@@ -118,104 +106,97 @@ export default function NotebookPage() {
     });
   }
 
+  const headerActions = isSignedIn ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button size="sm" className="h-8 gap-1.5">
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Tạo nhóm</span>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => { setCreateMode("manual"); setCreateDialogOpen(true); }}
+        >
+          <BookOpen className="h-4 w-4 mr-2" />
+          Nhóm từ vựng
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => { setCreateMode("lyrics"); setCreateDialogOpen(true); }}
+        >
+          <Music className="h-4 w-4 mr-2" />
+          Lời bài hát
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : undefined;
+
+  const breadcrumb = (
+    <BreadcrumbItem>
+      <BreadcrumbPage>Sổ tay</BreadcrumbPage>
+    </BreadcrumbItem>
+  );
+
   if (!isLoaded || loading) {
     return (
-      <SidebarProvider>
-        <HchSidebar />
-        <SidebarInset>
-          <div className="flex items-center justify-center flex-1 p-8 text-muted-foreground text-sm">
-            Đang tải...
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <AppLayout breadcrumb={breadcrumb}>
+        <div className="flex items-center justify-center flex-1 p-8 text-muted-foreground text-sm">
+          Đang tải...
+        </div>
+      </AppLayout>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <SidebarProvider>
-        <HchSidebar />
-        <SidebarInset>
-          <div className="flex flex-col items-center justify-center flex-1 gap-4 p-8 text-center">
-            <p className="text-muted-foreground text-sm">Đăng nhập để sử dụng Sổ tay</p>
-            <SignInButton mode="redirect">
-              <Button>Đăng nhập</Button>
-            </SignInButton>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <AppLayout breadcrumb={breadcrumb}>
+        <div className="flex flex-col items-center justify-center flex-1 gap-4 p-8 text-center">
+          <p className="text-muted-foreground text-sm">Đăng nhập để sử dụng Sổ tay</p>
+          <SignInButton mode="redirect">
+            <Button>Đăng nhập</Button>
+          </SignInButton>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <SidebarProvider>
-      <HchSidebar />
-
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-vertical:h-4 data-vertical:self-auto" />
-          <Breadcrumb className="flex-1 min-w-0">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Sổ tay</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button size="sm" className="h-8 gap-1.5">
-                  <Plus className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Tạo nhóm</span>
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { setCreateMode("manual"); setCreateDialogOpen(true); }}>
-                <BookOpen className="h-4 w-4 mr-2" />
-                Nhóm từ vựng
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setCreateMode("lyrics"); setCreateDialogOpen(true); }}>
-                <Music className="h-4 w-4 mr-2" />
-                Lời bài hát
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        <div className="flex flex-1 flex-col p-4 pt-0 gap-3 max-w-2xl">
-          {groups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <p className="text-muted-foreground text-sm">Chưa có nhóm nào.</p>
-              <p className="text-xs text-muted-foreground/60">
-                Tạo nhóm để tổ chức từ vựng hoặc lời bài hát.
-              </p>
-            </div>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+    <>
+      <AppLayout breadcrumb={breadcrumb} headerActions={headerActions}>
+        {groups.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <p className="text-muted-foreground text-sm">Chưa có nhóm nào.</p>
+            <p className="text-xs text-muted-foreground/60">
+              Tạo nhóm để tổ chức từ vựng hoặc lời bài hát.
+            </p>
+          </div>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={groups.map((g) => g.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext items={groups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2">
-                  {groups.map((group) => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      wordCount={wordCounts[group.id] ?? 0}
-                      onOpen={() => router.push(`/notebook/${group.id}`)}
-                      onDelete={() => handleDelete(group.id)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </div>
-      </SidebarInset>
+              <div className="flex flex-col gap-2 max-w-2xl">
+                {groups.map((group) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    wordCount={0}
+                    onOpen={() => router.push(`/notebook/${group.slug}`)}
+                    onDelete={() => handleDelete(group.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </AppLayout>
 
       <CreateGroupDialog
         open={createDialogOpen}
@@ -223,6 +204,6 @@ export default function NotebookPage() {
         onSubmit={handleCreate}
         mode={createMode}
       />
-    </SidebarProvider>
+    </>
   );
 }

@@ -10,6 +10,7 @@ export interface NotebookGroup {
   description?: string;
   type: "manual" | "lyrics";
   sortOrder: number;
+  slug: string;
   createdAt: string;
   updatedAt: string;
 }

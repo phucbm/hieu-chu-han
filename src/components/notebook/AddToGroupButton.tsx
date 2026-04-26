@@ -67,8 +67,8 @@ export function AddToGroupButton({ simp, initialGroupIds, compact = false }: Add
         setActiveGroupIds((prev) => [...prev, groupId]);
         toast.success("Đã thêm vào nhóm");
       }
-    } catch {
-      toast.error("Có lỗi xảy ra");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ export function AddToGroupButton({ simp, initialGroupIds, compact = false }: Add
 
   async function handleCreateGroup(title: string, description?: string) {
     const group = await createGroup(title, description, "manual");
-    if (!group) { toast.error("Không thể tạo nhóm"); return; }
+    if (!group) { toast.error("createGroup returned null — check server logs"); return; }
     await addWordToGroup(group.id, simp);
     setActiveGroupIds((prev) => [...prev, group.id]);
     setGroups((prev) => [...prev, group]);
