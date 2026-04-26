@@ -8,7 +8,9 @@ export default clerkMiddleware({
 });
 
 export const config = {
-  // Only run on API routes — no page is gated behind auth, so never intercept page loads.
-  // This prevents Clerk handshake failures from breaking the app for users with expired sessions.
-  matcher: ["/(api|trpc)(.*)"],
+  // Must cover all routes where auth() is called (including server actions, which POST to page URLs).
+  // Skips static assets and Next.js internals. No page is gated — everything is public by default.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+  ],
 };
