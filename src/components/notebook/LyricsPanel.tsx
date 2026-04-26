@@ -94,7 +94,7 @@ export function LyricsPanel({ lyrics, userWords }: LyricsPanelProps) {
         </a>
       )}
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-4">
         {lines.map((line, lineIdx) => {
           if (!line.trim()) return <div key={lineIdx} className="h-3" />;
           const tokens = splitLineIntoTokens(line);
@@ -117,10 +117,10 @@ export function LyricsPanel({ lyrics, userWords }: LyricsPanelProps) {
                     title={pinyin}
                   >
                     {pinyin && (
-                      <span className="text-[10px] text-muted-foreground leading-none mb-0.5">{pinyin}</span>
+                      <span className="text-muted-foreground leading-none mb-0.5">{pinyin}</span>
                     )}
                     <span
-                      className={`font-chinese text-sm ${STATUS_CLASS[status]}`}
+                      className={`text-2xl font-chinese ${STATUS_CLASS[status]}`}
                       onClick={isClickable ? () => router.push(`/word/${encodeURIComponent(token)}`) : undefined}
                     >
                       {token}
