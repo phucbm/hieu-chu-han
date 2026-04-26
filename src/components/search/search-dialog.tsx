@@ -1,0 +1,281 @@
+"use client"
+
+/**
+ * SearchDialog — two-panel search: text input (left) + handwriting pad (right).
+ *
+ * Search flow:
+ *   - User types in the input → nothing happens automatically
+ *   - User clicks Search or presses Enter → searchWords() fires → results appear
+ *   - User clicks a result → word opens, dialog closes
+ *
+ * Handwriting flow:
+ *   - User draws a character → candidates appear below the pad
+ *   - User clicks a candidate → character is APPENDED to the text input (no auto-search)
+ *   - Canvas stays as-is; user can draw the next character or click Clear manually
+ *
+ * Multi-character input (e.g. 中 + 文 drawn separately, then searched):
+ *   - searchWords("中文") returns entries; if "中文" has no combined entry,
+ *     segmentWord() splits into ["中文","中","文"] → WordTabs shows one tab per char
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react"
+import { PenLineIcon, SearchIcon } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { searchWords } from "@/app/actions"
+import { HandwritingPad } from "@/components/HandwritingPad"
+import { HandwritingRecognizer, type Candidate } from "@/core/handwriting"
+import type { WordEntry } from "@/core/types"
+
+type SearchMode = "text" | "draw"
+
+interface SearchDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSelect: (simp: string) => void
+}
+
+export function SearchDialog({ open, onOpenChange, onSelect }: SearchDialogProps) {
+  const [mode, setMode]             = useState<SearchMode>("text")
+  const [query, setQuery]           = useState("")
+  const [results, setResults]       = useState<WordEntry[]>([])
+  const [searched, setSearched]     = useState(false)
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [strokeCount, setStrokeCount] = useState(0)
+  const strokesRef  = useRef<number[][][]>([])
+  const recognizer  = useRef<HandwritingRecognizer | null>(null)
+  const inputRef    = useRef<HTMLInputElement>(null)
+
+  // Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault()
+        onOpenChange(true)
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [onOpenChange])
+
+  // Handwriting recognizer lifecycle — init on open, destroy on close
+  useEffect(() => {
+    if (!open) return
+    const r = new HandwritingRecognizer()
+    r.init((c) => setCandidates(c.slice(0, 8)))
+    recognizer.current = r
+    return () => { r.destroy(); recognizer.current = null }
+  }, [open])
+
+  // Auto-focus input when dialog opens in text mode
+  useEffect(() => {
+    if (open && mode === "text") {
+      const t = setTimeout(() => inputRef.current?.focus(), 50)
+      return () => clearTimeout(t)
+    }
+  }, [open, mode])
+
+  const runSearch = useCallback(async () => {
+    if (!query.trim()) return
+    setResults(await searchWords(query))
+    setSearched(true)
+  }, [query])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") runSearch()
+  }, [runSearch])
+
+  // Append candidate character to input, focus input for next action
+  const handleCandidateClick = useCallback((hanzi: string) => {
+    setQuery((prev) => prev + hanzi)
+    setSearched(false)
+    inputRef.current?.focus()
+  }, [])
+
+  const handleSelect = useCallback((simp: string) => {
+    onSelect(simp)
+    onOpenChange(false)
+  }, [onSelect, onOpenChange])
+
+  const resetState = useCallback(() => {
+    setQuery("")
+    setResults([])
+    setSearched(false)
+    setCandidates([])
+    setStrokeCount(0)
+    strokesRef.current = []
+  }, [])
+
+  const handleOpenChange = useCallback((v: boolean) => {
+    onOpenChange(v)
+    if (!v) resetState()
+  }, [onOpenChange, resetState])
+
+  const handleStrokeEnd = useCallback((strokes: number[][][]) => {
+    strokesRef.current = strokes
+    setStrokeCount(strokes.length)
+    recognizer.current?.lookup(strokes)
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    const next = strokesRef.current.slice(0, -1)
+    strokesRef.current = next
+    setStrokeCount(next.length)
+    if (next.length > 0) recognizer.current?.lookup(next)
+    else setCandidates([])
+  }, [])
+
+  const handleClear = useCallback(() => {
+    strokesRef.current = []
+    setStrokeCount(0)
+    setCandidates([])
+  }, [])
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-[95vw]! sm:max-w-[900px]! max-h-[85vh]! p-0! gap-0! flex flex-col overflow-hidden"
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">Tìm kiếm</DialogTitle>
+        <DialogDescription className="sr-only">
+          Tìm chữ Hán theo ký tự, pinyin hoặc Hán Việt
+        </DialogDescription>
+
+        {/* Mobile mode toggle */}
+        <div className="flex lg:hidden border-b px-3 py-2 gap-1 shrink-0">
+          {(["text", "draw"] as SearchMode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                mode === m
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {m === "text" ? <SearchIcon className="size-3" /> : <PenLineIcon className="size-3" />}
+              {m === "text" ? "Gõ tìm kiếm" : "Viết tay"}
+            </button>
+          ))}
+        </div>
+
+        {/* Two-column body */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+
+          {/* Left 60%: text search */}
+          <div className={cn(
+            "flex flex-col min-w-0 min-h-0 border-r flex-[3]",
+            mode === "draw" && "hidden lg:flex"
+          )}>
+
+            {/* Input row */}
+            <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setSearched(false) }}
+                onKeyDown={handleKeyDown}
+                placeholder="Nhập chữ Hán, pinyin, Hán Việt..."
+                className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1 font-chinese"
+              />
+              <Button
+                size="sm"
+                onClick={runSearch}
+                disabled={!query.trim()}
+              >
+                <SearchIcon className="size-3.5" />
+                Tìm
+              </Button>
+            </div>
+
+            {/* Results */}
+            <div className="flex-1 overflow-y-auto">
+              {searched && results.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Không tìm thấy kết quả.
+                </p>
+              ) : (
+                <ul>
+                  {results.map((r, i) => (
+                    <li key={`${r.simp}-${i}`}>
+                      <button
+                        onClick={() => handleSelect(r.simp)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <span className="font-chinese text-2xl w-10 text-center leading-none shrink-0">
+                          {r.simp}
+                        </span>
+                        <span className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium">
+                            {r.sinoVietnamese || r.simp}
+                            {r.trad && r.trad !== r.simp && (
+                              <span className="ml-2 text-xs text-muted-foreground font-chinese">
+                                ({r.trad})
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {r.pinyin}{r.definitionVi && ` · ${r.definitionVi}`}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Right 40%: handwriting */}
+          <div className={cn(
+            "flex flex-col gap-3 p-4 overflow-y-auto flex-[2]",
+            mode === "text" ? "hidden lg:flex" : "flex flex-1"
+          )}>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest shrink-0">
+              Viết tay
+            </p>
+
+            <div className="w-full">
+              <HandwritingPad
+                onStrokeEnd={handleStrokeEnd}
+                onClear={handleClear}
+                strokeCount={strokeCount}
+                onUndo={handleUndo}
+              />
+            </div>
+
+            {/* Candidates — click appends to input, does not trigger search */}
+            {candidates.length > 0 && (
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <p className="text-xs text-muted-foreground">
+                  Gợi ý — nhấn để thêm vào ô tìm kiếm
+                </p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {candidates.map((c) => (
+                    <button
+                      key={c.hanzi}
+                      onClick={() => handleCandidateClick(c.hanzi)}
+                      className="font-chinese text-xl px-2.5 py-1 rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      {c.hanzi}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
