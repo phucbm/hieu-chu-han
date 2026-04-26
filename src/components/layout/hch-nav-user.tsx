@@ -21,9 +21,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 import { ChevronsUpDownIcon, LogOutIcon, LogInIcon, UserPlusIcon } from "lucide-react"
-// import { SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon } from "lucide-react"
 
 export function HchNavUser() {
   const { isSignedIn, isLoaded, signOut } = useAuth()
@@ -32,7 +30,6 @@ export function HchNavUser() {
 
   if (!isLoaded) return null
 
-  // ── Signed out: sign in / sign up buttons ────────────────────────────────
   if (!isSignedIn) {
     return (
       <SidebarMenu>
@@ -56,10 +53,9 @@ export function HchNavUser() {
     )
   }
 
-  // ── Signed in: avatar + dropdown ─────────────────────────────────────────
-  const name    = user?.firstName ?? user?.username ?? "Người dùng"
-  const email   = user?.emailAddresses[0]?.emailAddress ?? ""
-  const avatar  = user?.imageUrl ?? ""
+  const name     = user?.firstName ?? user?.username ?? "Người dùng"
+  const email    = user?.emailAddresses[0]?.emailAddress ?? ""
+  const avatar   = user?.imageUrl ?? ""
   const initials = name.slice(0, 2).toUpperCase()
 
   return (
@@ -86,7 +82,6 @@ export function HchNavUser() {
             align="end"
             sideOffset={4}
           >
-            {/* User info header — GroupLabel requires a parent Group */}
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5">
@@ -104,32 +99,6 @@ export function HchNavUser() {
 
             <DropdownMenuSeparator />
 
-            {/* Account actions — uncomment when features are ready */}
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <SparklesIcon />
-                Nâng cấp Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
-
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon />
-                Tài khoản
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon />
-                Thanh toán
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon />
-                Thông báo
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
-
-            {/* Sign out */}
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => signOut()}>
                 <LogOutIcon />

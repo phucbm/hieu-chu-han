@@ -1,10 +1,5 @@
 "use client"
 
-/**
- * V2RightSheet — Generic right-side notebook panel.
- * Add a new tab: append to TABS + add a slot branch below.
- */
-
 import { useState } from "react"
 import {
   Sheet,
@@ -22,7 +17,7 @@ const TABS = [
   { id: "notes",   label: "Ghi chú" },
 ]
 
-interface V2RightSheetProps {
+interface RightSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   viewedWords: ViewedWord[]
@@ -30,13 +25,13 @@ interface V2RightSheetProps {
   onRemove: (simp: string) => void
 }
 
-export function V2RightSheet({
+export function RightSheet({
   open,
   onOpenChange,
   viewedWords,
   onSelect,
   onRemove,
-}: V2RightSheetProps) {
+}: RightSheetProps) {
   const [activeTab, setActiveTab] = useState("history")
 
   return (
@@ -47,7 +42,6 @@ export function V2RightSheet({
           <SheetTitle className="text-sm font-semibold">Sổ tay</SheetTitle>
         </SheetHeader>
 
-        {/* Tab bar */}
         <div className="flex border-b shrink-0">
           {TABS.map((tab) => (
             <button
@@ -65,7 +59,6 @@ export function V2RightSheet({
           ))}
         </div>
 
-        {/* ── Slot: History ─────────────────────────────────────── */}
         {activeTab === "history" && (
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-3">
@@ -78,7 +71,6 @@ export function V2RightSheet({
           </ScrollArea>
         )}
 
-        {/* ── Slot: Notes ───────────────────────────────────────── */}
         {activeTab === "notes" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 text-center">
             <p className="text-sm text-muted-foreground">Ghi chú cá nhân</p>

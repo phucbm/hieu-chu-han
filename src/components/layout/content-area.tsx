@@ -4,14 +4,14 @@ import Image from "next/image"
 import { WordTabs } from "@/components/word/WordTabs"
 import type { WordEntry } from "@/core/types"
 
-interface V2ContentAreaProps {
+interface ContentAreaProps {
   entries: WordEntry[]
   activeTab?: string
   onTabChange?: (tab: string) => void
   onWordClick: (simp: string) => void
 }
 
-export function V2ContentArea({ entries, activeTab, onTabChange, onWordClick }: V2ContentAreaProps) {
+export function ContentArea({ entries, activeTab, onTabChange, onWordClick }: ContentAreaProps) {
   if (entries.length === 0) {
     return (
       <div className="content-area-welcome flex flex-col items-center justify-center gap-4 py-24 text-center">

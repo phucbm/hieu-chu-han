@@ -15,10 +15,10 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { SearchIcon, BookOpenIcon } from "lucide-react"
-import { HchSidebar } from "@/app/v2/components/hch-sidebar"
-import { V2SearchDialog } from "@/app/v2/components/v2-search-dialog"
-import { V2RightSheet } from "@/app/v2/components/v2-right-sheet"
-import { V2ContentArea } from "@/app/v2/components/v2-content-area"
+import { HchSidebar } from "@/components/layout/hch-sidebar"
+import { SearchDialog } from "@/components/search/search-dialog"
+import { RightSheet } from "@/components/layout/right-sheet"
+import { ContentArea } from "@/components/layout/content-area"
 import { getWordEntries } from "@/app/actions"
 import { useViewedWords } from "@/hooks/useViewedWords"
 import { wordKey, type WordEntry } from "@/core/types"
@@ -128,7 +128,7 @@ export default function HomePage() {
         </header>
 
         <div className="flex flex-1 flex-col p-4 pt-0 overflow-y-auto">
-          <V2ContentArea
+          <ContentArea
             entries={entries}
             activeTab={activeTab}
             onTabChange={handleTabChange}
@@ -137,13 +137,13 @@ export default function HomePage() {
         </div>
       </SidebarInset>
 
-      <V2SearchDialog
+      <SearchDialog
         open={searchOpen}
         onOpenChange={setSearchOpen}
         onSelect={openWord}
       />
 
-      <V2RightSheet
+      <RightSheet
         open={notebookOpen}
         onOpenChange={setNotebookOpen}
         viewedWords={viewedWords}

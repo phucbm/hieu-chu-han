@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
-import { HchNavUser } from "./hch-nav-user"
+import { HchNavUser } from "@/components/layout/hch-nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -13,15 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  HomeIcon,
-  BookOpenIcon,
-  Grid3X3Icon,
-  ExternalLinkIcon,
-  MessageCircleIcon,
-  SparklesIcon,
-} from "lucide-react"
-import pkg from "../../../../package.json"
+import { HomeIcon, ExternalLinkIcon, MessageCircleIcon } from "lucide-react"
+import pkg from "../../../package.json"
 
 const navMain = [
   {
@@ -31,35 +24,6 @@ const navMain = [
     isActive: true,
     items: [],
   },
-  // {
-  //   title: "Từ điển",
-  //   url: "#",
-  //   icon: <BookOpenIcon />,
-  //   items: [
-  //     { title: "Tra từ", url: "#" },
-  //     { title: "Lịch sử tra cứu", url: "#" },
-  //     { title: "Đã lưu", url: "#" },
-  //   ],
-  // },
-  // {
-  //   title: "Bộ thủ",
-  //   url: "#",
-  //   icon: <Grid3X3Icon />,
-  //   items: [
-  //     { title: "214 bộ thủ", url: "#" },
-  //     { title: "Tìm theo bộ", url: "#" },
-  //   ],
-  // },
-  // {
-  //   title: "HSK",
-  //   url: "#",
-  //   icon: <SparklesIcon />,
-  //   items: [
-  //     { title: "HSK 1", url: "#" },
-  //     { title: "HSK 2", url: "#" },
-  //     { title: "HSK 3", url: "#" },
-  //   ],
-  // },
 ]
 
 const navSecondary = [
@@ -78,7 +42,6 @@ const navSecondary = [
 export function HchSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
-      {/* Header: logo + app name + version */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -99,13 +62,11 @@ export function HchSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* Content: main nav + secondary nav */}
       <SidebarContent>
         <NavMain items={navMain} />
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
 
-      {/* Footer: user avatar + dropdown */}
       <SidebarFooter>
         <HchNavUser />
       </SidebarFooter>
