@@ -8,7 +8,7 @@
 
 import { useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Undo2, Trash2 } from "lucide-react";
+import { Undo2, Trash2, ExternalLink } from "lucide-react";
 
 interface HandwritingPadProps {
   /** Called after each stroke ends (or after undo/clear) with all current strokes as raw pixel coords. */
@@ -107,6 +107,23 @@ export function HandwritingPad({
     onStrokeEnd(strokes.current);
   }, [redraw, onUndo, onStrokeEnd]);
 
+  const handleOpenAsImage = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const offscreen = document.createElement("canvas");
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    const ctx = offscreen.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, offscreen.width, offscreen.height);
+    ctx.drawImage(canvas, 0, 0);
+    offscreen.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    }, "image/png");
+  }, []);
+
   const handleClear = useCallback(() => {
     strokes.current = [];
     currentStroke.current = null;
@@ -152,6 +169,16 @@ export function HandwritingPad({
         >
           <Trash2 className="h-4 w-4 mr-1" />
           Xóa
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleOpenAsImage}
+          disabled={strokeCount === 0}
+        >
+          <ExternalLink className="h-4 w-4 mr-1" />
+          PNG
         </Button>
       </div>
     </div>
