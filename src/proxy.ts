@@ -2,7 +2,10 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 
 // All routes are public by default — Clerk is used only for identity,
 // not to gate any page. Auth state is checked per-feature in client hooks.
-export default clerkMiddleware();
+export default clerkMiddleware({
+  // Tolerate up to 60s of clock drift between Vercel edge nodes and Clerk
+  clockSkewInMs: 60_000,
+});
 
 export const config = {
   matcher: [
