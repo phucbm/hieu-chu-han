@@ -41,7 +41,9 @@ import { cn } from "@/lib/utils"
 import { searchWords } from "@/app/actions"
 import { HandwritingPad } from "@/components/HandwritingPad"
 import { HandwritingRecognizer, type Candidate } from "@/core/handwriting"
+import { RecentSearch } from "@/components/search/RecentSearch"
 import type { WordEntry } from "@/core/types"
+import type { ViewedWord } from "@/hooks/useViewedWords"
 
 type SearchMode = "text" | "draw"
 
@@ -49,6 +51,7 @@ interface SearchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelect: (simp: string) => void
+  viewedWords?: ViewedWord[]
 }
 
 function useIsDesktop() {
@@ -63,7 +66,7 @@ function useIsDesktop() {
   return isDesktop
 }
 
-export function SearchDialog({ open, onOpenChange, onSelect }: SearchDialogProps) {
+export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }: SearchDialogProps) {
   const isDesktop = useIsDesktop()
 
   const [mode, setMode]               = useState<SearchMode>("text")
@@ -211,6 +214,9 @@ export function SearchDialog({ open, onOpenChange, onSelect }: SearchDialogProps
           </div>
 
           <div className="flex-1 overflow-y-auto">
+            {!searched && results.length === 0 && (
+              <RecentSearch words={viewedWords} onSelect={handleSelect} />
+            )}
             {searched && results.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Không tìm thấy kết quả.

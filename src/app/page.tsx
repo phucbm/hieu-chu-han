@@ -141,6 +141,7 @@ export default function HomePage() {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         onSelect={openWord}
+        viewedWords={viewedWords}
       />
 
       <RightSheet
