@@ -152,7 +152,10 @@ export async function deleteGroup(groupId: string): Promise<void> {
     args: [groupId, userId],
   });
 
-  // Remove this groupId from all user_words
+  // For each word in this group:
+  // - remove groupId from group_ids
+  // - if group_ids becomes empty, delete the user_words row entirely
+  // - if word still belongs to other groups, just update group_ids
   const words = await db!.execute({
     sql: "SELECT id, group_ids FROM user_words WHERE user_id = ?",
     args: [userId],
@@ -160,11 +163,18 @@ export async function deleteGroup(groupId: string): Promise<void> {
   for (const row of words.rows) {
     const r = row as Record<string, unknown>;
     const ids = parseJsonArray(r.group_ids);
-    if (ids.includes(groupId)) {
-      const updated = ids.filter((id) => id !== groupId);
+    if (!ids.includes(groupId)) continue;
+
+    const remaining = ids.filter((id) => id !== groupId);
+    if (remaining.length === 0) {
+      await db!.execute({
+        sql: "DELETE FROM user_words WHERE id = ?",
+        args: [r.id as string],
+      });
+    } else {
       await db!.execute({
         sql: "UPDATE user_words SET group_ids = ? WHERE id = ?",
-        args: [JSON.stringify(updated), r.id as string],
+        args: [JSON.stringify(remaining), r.id as string],
       });
     }
   }

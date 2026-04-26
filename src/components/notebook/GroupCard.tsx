@@ -4,7 +4,17 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Music, BookOpen, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { NotebookGroup } from "@/core/notebook-types";
 
 interface GroupCardProps {
@@ -66,14 +76,28 @@ export function GroupCard({ group, wordCount, onOpen, onDelete }: GroupCardProps
         </div>
       </button>
 
-      <button
-        type="button"
-        onClick={onDelete}
-        className="flex items-center px-3 text-muted-foreground hover:text-destructive transition-colors shrink-0"
-        aria-label="Xóa nhóm"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      <AlertDialog>
+        <AlertDialogTrigger
+          className="flex items-center px-3 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+          aria-label="Xóa nhóm"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </AlertDialogTrigger>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa nhóm "{group.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Các từ chỉ thuộc nhóm này sẽ bị xóa khỏi lịch sử. Từ thuộc nhóm khác sẽ không bị ảnh hưởng.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={onDelete}>
+              Xóa nhóm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
