@@ -14,19 +14,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, BookOpenIcon } from "lucide-react";
-import { HchSidebar } from "@/components/layout/hch-sidebar";
+import { HchSidebar } from "@/components/layout/hch-sidebar"
+import type { NotebookGroup } from "@/core/notebook-types";
 import { SearchDialog } from "@/components/search/search-dialog";
 import { RightSheet } from "@/components/layout/right-sheet";
 import { useViewedWords } from "@/hooks/useViewedWords";
 
 interface AppLayoutProps {
-  /** Breadcrumb content rendered in the center-left of the header. */
   breadcrumb: React.ReactNode;
-  /**
-   * Page-specific action buttons placed to the LEFT of the Search and Notebook
-   * buttons. Keep to 1-2 compact buttons max so the header doesn't overflow.
-   */
   headerActions?: React.ReactNode;
+  /** Pre-fetched groups to seed the sidebar (avoids CLS on initial render). */
+  initialGroups?: NotebookGroup[];
   /** Override search-dialog select behavior. Defaults to navigating to /word/[simp]. */
   onSearchSelect?: (simp: string) => void;
   children: React.ReactNode;
@@ -35,6 +33,7 @@ interface AppLayoutProps {
 export function AppLayout({
   breadcrumb,
   headerActions,
+  initialGroups,
   onSearchSelect,
   children,
 }: AppLayoutProps) {
@@ -54,7 +53,7 @@ export function AppLayout({
 
   return (
     <SidebarProvider>
-      <HchSidebar />
+      <HchSidebar initialGroups={initialGroups} />
 
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">

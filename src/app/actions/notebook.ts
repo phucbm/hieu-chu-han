@@ -94,7 +94,21 @@ export async function getGroups(): Promise<NotebookGroup[]> {
     args: [userId],
   });
 
-  return result.rows.map((r) => toGroup(r as Record<string, unknown>));
+  const groups = result.rows.map((r) => toGroup(r as Record<string, unknown>));
+
+  // Count words per group
+  const wordsResult = await db!.execute({
+    sql: "SELECT group_ids FROM user_words WHERE user_id = ?",
+    args: [userId],
+  });
+  const countMap = new Map<string, number>();
+  for (const row of wordsResult.rows) {
+    for (const id of parseJsonArray((row as Record<string, unknown>).group_ids)) {
+      countMap.set(id, (countMap.get(id) ?? 0) + 1);
+    }
+  }
+
+  return groups.map((g) => ({ ...g, wordCount: countMap.get(g.id) ?? 0 }));
 }
 
 export async function createGroup(

@@ -13,6 +13,7 @@ export interface NotebookGroup {
   slug: string;
   createdAt: string;
   updatedAt: string;
+  wordCount?: number;
 }
 
 export interface NotebookLyrics {

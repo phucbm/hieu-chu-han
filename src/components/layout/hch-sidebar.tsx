@@ -34,14 +34,18 @@ const navSecondary = [
   },
 ]
 
-export function HchSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface HchSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  initialGroups?: NotebookGroup[]
+}
+
+export function HchSidebar({ initialGroups, ...props }: HchSidebarProps) {
   const { isSignedIn, isLoaded } = useAuth()
   const pathname = usePathname()
-  const [groups, setGroups] = useState<NotebookGroup[]>([])
+  const [groups, setGroups] = useState<NotebookGroup[]>(initialGroups ?? [])
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      getGroups().then(setGroups).catch(() => setGroups([]))
+      getGroups().then(setGroups).catch(() => {})
     } else if (isLoaded) {
       setGroups([])
     }
