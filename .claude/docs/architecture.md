@@ -42,79 +42,89 @@ Live at: **hieuchuhan.phucbm.com**
 ## Layout (desktop ≥1024px)
 
 ```
-┌──────────────┬──────────────────────────┬────────────────┐
-│  AppSidebar  │         <main>           │ RecentViewed   │
-│  w-80 fixed  │  pl-80 pr-72 scrollable  │ Panel w-72     │
-│  left-0      │                          │ fixed right-0  │
-│              │                          │                │
-│  Logo        │  WordTabs                │  ViewedWord    │
-│  SearchInput │  (CharCard + tabs)       │  List          │
-│  Results     │                          │  (WordRows)    │
-│  RecentSearch│                          │                │
-└──────────────┴──────────────────────────┴────────────────┘
+┌──────────────┬──────────────────────────────────────────────┐
+│  HchSidebar  │  SidebarInset (<main>)                       │
+│  shadcn      │                                              │
+│  inset       │  header: SidebarTrigger | breadcrumb |       │
+│              │          Search button | Notebook button      │
+│  Logo        │                                              │
+│  Nav links   │  ContentArea (scrollable)                    │
+│  HchNavUser  │    welcome state  OR  WordTabs               │
+└──────────────┴──────────────────────────────────────────────┘
+
+SearchDialog (Cmd+K modal, 900px wide):
+┌─────────────────────────┬──────────────────────┐
+│  Text search (60%)      │  Handwriting (40%)   │
+│  input + Search button  │  canvas + candidates │
+│  results list           │                      │
+└─────────────────────────┴──────────────────────┘
+
+RightSheet (slides from right): history + notes tabs
 ```
 
 ## Layout (mobile <1024px)
 
 ```
 ┌────────────────────────────┐
-│  AppHeader (sticky)        │  — hamburger opens HistorySheet
+│  header: hamburger | word  │
+│          Search | Notebook │
 ├────────────────────────────┤
-│  SearchInput + RecentSearch│  — sticky below header
-│  SuggestionBox (overlay)   │
-├────────────────────────────┤
-│  <main> (scrollable)       │
+│  ContentArea (scrollable)  │
 │  WordTabs                  │
 └────────────────────────────┘
-         HistorySheet ──► slides from right (overlay)
+
+SearchDialog: mode toggle at top (Gõ / Viết tay), one panel at a time
+RightSheet: slides from right
 ```
 
 ## Component tree
 
 ```
 app/
-  layout.tsx          — fonts, metadata (version in title), SwAutoUpdate
-  page.tsx            — all state lives here; openWord() is the single navigation handler
-  actions.ts          — searchWords / suggestWords / getWordEntries (async, client-side)
-  sw.ts               — Serwist service worker (skipWaiting + clientsClaim → silent auto-update)
+  layout.tsx                  — fonts, metadata (version in title), SwAutoUpdate
+  page.tsx                    — all state lives here; openWord() is the single navigation handler
+  actions.ts                  — searchWords / suggestWords / getWordEntries (async, client-side)
+  sw.ts                       — Serwist service worker (skipWaiting + clientsClaim → silent auto-update)
 
 components/
   layout/
-    AppSidebar        — desktop left column
-    AppHeader         — mobile top bar
-    RecentViewedPanel — desktop right column
-    ViewedWordList    — shared WordRow list (used by panel + sheet)
-    HistoryBottomSheet— mobile right-side sheet (wraps ViewedWordList)
+    hch-sidebar.tsx           — shadcn Sidebar with logo, nav, user footer
+    hch-nav-user.tsx          — Clerk-aware user avatar + sign-in/sign-up buttons
+    content-area.tsx          — main content pane: welcome state or WordTabs
+    right-sheet.tsx           — right-side notebook sheet (history + notes tabs)
+    ViewedWordList.tsx        — shared WordRow list for viewed-word history
   search/
-    SearchInput       — controlled input, Escape + clear button
-    SuggestionBox     — mobile floating dropdown (top 10, focus-gated)
-    WordRow           — generic row: simp + trad + pinyin + vi + 👁N + ✕ on hover
-    RecentSearch      — badge row for recent search append
+    search-dialog.tsx         — Cmd+K dialog: text input + Search button + handwriting pad
+    WordRow.tsx               — generic row: simp + trad + pinyin + vi
   word/
-    WordTabs          — tab strip: compound word → one tab per char
-    CharCard          — main character card: pinyin, Sino-Viet, VI/EN defs, stats
-    EtymologyView     — component breakdown diagram
-    StrokeAnimation   — hanzi-writer canvas
-    RelatedWords      — topWords chip list
+    WordTabs                  — tab strip: compound word → one tab per char
+    WordTabContent            — content for a single tab
+    WordInfoBox               — pinyin, Sino-Viet, VI/EN defs, stats
+    StrokeBox                 — hanzi-writer stroke animation
+    EtymologySection          — component breakdown diagram
+    RelatedSection            — topWords chip list
+    DefinitionSection         — definitions list
+    WordAIExplanation         — GROQ-powered AI explanation
   shared/
-    WordBadge         — compact simp+pinyin chip
+    WordBadge                 — compact simp+pinyin chip
+  HandwritingPad.tsx          — canvas for drawing; Pointer Events; Undo + Clear buttons
 
 core/
-  client-dictionary   — lazy-load dictionary.json, search + lookup
-  dictionary.ts       — server-side version (not used at runtime, kept for reference)
-  segmenter.ts        — isCompound(), segmentWord() — splits compounds into chars
-  types.ts            — WordEntry, WordSummary, ViewedWord, etc.
+  client-dictionary.ts        — lazy-load dictionary.json, search + lookup
+  dictionary.ts               — server-side version (not used at runtime, kept for reference)
+  segmenter.ts                — isCompound(), segmentWord() — splits compounds into chars
+  handwriting.ts              — HandwritingRecognizer: Web Worker lifecycle for hanzi_lookup WASM
+  types.ts                    — WordEntry, WordSummary, ViewedWord, etc.
 
 hooks/
-  useViewedWords      — localStorage persistence (hch_viewed_words), viewedAt[] for count
+  useViewedWords              — localStorage persistence (hch_viewed_words), viewedAt[] for count
 ```
 
 ## Search flow
 
-1. User types → 600ms debounce → `searchWords(query)` → `lookupWord()` → substring + pinyin match → sorted by `boost × relevance`
-2. Desktop: results shown inline below search input (always visible when query has value)
-3. Mobile: top-10 shown in `SuggestionBox` dropdown (only while input is focused)
-4. Click result / badge → `openWord(simp)` → `getWordEntries(simp)` → `WordTabs`
+See `.claude/docs/ux-search.md` for the full interaction spec.
+
+Summary: user opens SearchDialog (Cmd+K or button) → types or draws → clicks **Tìm** or presses Enter → results appear → clicks a result → `openWord(simp)` → `getWordEntries(simp)` → `WordTabs` → dialog closes.
 
 ## Viewed words flow
 
