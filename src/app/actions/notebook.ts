@@ -163,8 +163,8 @@ export async function deleteGroup(groupId: string): Promise<void> {
     if (ids.includes(groupId)) {
       const updated = ids.filter((id) => id !== groupId);
       await db!.execute({
-        sql: "UPDATE user_words SET group_ids = ?, updated_at = ? WHERE id = ?",
-        args: [JSON.stringify(updated), new Date().toISOString(), r.id as string],
+        sql: "UPDATE user_words SET group_ids = ? WHERE id = ?",
+        args: [JSON.stringify(updated), r.id as string],
       });
     }
   }
@@ -212,8 +212,8 @@ export async function addWordToGroup(groupId: string, simp: string): Promise<voi
   if (!ids.includes(groupId)) {
     ids.push(groupId);
     await db!.execute({
-      sql: "UPDATE user_words SET group_ids = ?, updated_at = ? WHERE id = ?",
-      args: [JSON.stringify(ids), now, row.id as string],
+      sql: "UPDATE user_words SET group_ids = ? WHERE id = ?",
+      args: [JSON.stringify(ids), row.id as string],
     });
   }
 
@@ -234,8 +234,8 @@ export async function removeWordFromGroup(groupId: string, simp: string): Promis
   const row = result.rows[0] as Record<string, unknown>;
   const ids = parseJsonArray(row.group_ids).filter((id) => id !== groupId);
   await db!.execute({
-    sql: "UPDATE user_words SET group_ids = ?, updated_at = ? WHERE id = ?",
-    args: [JSON.stringify(ids), new Date().toISOString(), row.id as string],
+    sql: "UPDATE user_words SET group_ids = ? WHERE id = ?",
+    args: [JSON.stringify(ids), row.id as string],
   });
 }
 
@@ -296,8 +296,8 @@ export async function updateWordNote(simp: string, note: string): Promise<void> 
   if (!userId || !(await ready())) return;
 
   await db!.execute({
-    sql: "UPDATE user_words SET note = ?, updated_at = ? WHERE user_id = ? AND simp = ?",
-    args: [note.trim() || null, new Date().toISOString(), userId, simp],
+    sql: "UPDATE user_words SET note = ? WHERE user_id = ? AND simp = ?",
+    args: [note.trim() || null, userId, simp],
   });
 }
 
@@ -370,8 +370,8 @@ export async function addCustomLink(word: string, linkedWord: string): Promise<v
     if (!links.includes(b)) {
       links.push(b);
       await db!.execute({
-        sql: "UPDATE user_words SET custom_links = ?, updated_at = ? WHERE id = ?",
-        args: [JSON.stringify(links), now, row.id as string],
+        sql: "UPDATE user_words SET custom_links = ? WHERE id = ?",
+        args: [JSON.stringify(links), row.id as string],
       });
     }
   }
