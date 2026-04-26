@@ -39,7 +39,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { searchWords } from "@/app/actions"
-import { HandwritingPad } from "@/components/HandwritingPad"
+import { HandwritingPad, type HandwritingPadHandle } from "@/components/HandwritingPad"
 import { HandwritingRecognizer, type Candidate } from "@/core/handwriting"
 import { RecentSearch } from "@/components/search/RecentSearch"
 import { HandwritingAISection } from "@/components/search/HandwritingAISection"
@@ -79,7 +79,7 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
   const strokesRef  = useRef<number[][][]>([])
   const recognizer  = useRef<HandwritingRecognizer | null>(null)
   const inputRef    = useRef<HTMLInputElement>(null)
-  const padRef      = useRef<{ getImageBase64: () => string | null }>(null)
+  const padRef      = useRef<HandwritingPadHandle>(null)
 
   // Ctrl+K / Cmd+K
   useEffect(() => {
@@ -298,11 +298,11 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
             </div>
           )}
 
-          <HandwritingAISection
-            strokeCount={strokeCount}
-            getImageBase64={() => padRef.current?.getImageBase64() ?? null}
-            onCandidateClick={handleCandidateClick}
-          />
+          {/*<HandwritingAISection*/}
+          {/*  strokeCount={strokeCount}*/}
+          {/*  getStrokes={() => padRef.current?.getStrokes() ?? []}*/}
+          {/*  onCandidateClick={handleCandidateClick}*/}
+          {/*/>*/}
         </div>
 
       </div>

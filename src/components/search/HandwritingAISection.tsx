@@ -10,13 +10,55 @@ import { useAuth } from "@clerk/nextjs";
 
 interface HandwritingAISectionProps {
   strokeCount: number;
-  getImageBase64: () => string | null;
+  getStrokes: () => number[][][];
   onCandidateClick: (hanzi: string) => void;
+}
+
+function serializeStrokes(strokes: number[][][], canvasSize = 280): string {
+  const n = (v: number) => Math.round((v / canvasSize) * 100) / 100;
+
+  const lines = [`Total strokes: ${strokes.length}`];
+
+  strokes.forEach((stroke, i) => {
+    const pts = stroke.filter((_, j) => j % 4 === 0);
+    const norm = pts.map(([x, y]) => [n(x), n(y)]);
+    if (norm.length < 2) return;
+
+    const [sx, sy] = norm[0];
+    const [ex, ey] = norm[norm.length - 1];
+    const dx = ex - sx;
+    const dy = ey - sy;
+    const len = Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
+
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    let dir: string;
+    if (Math.abs(dx) < 0.05 && dy > 0) dir = "vertical downward (竖 shù)";
+    else if (Math.abs(dx) < 0.05 && dy < 0) dir = "vertical upward";
+    else if (Math.abs(dy) < 0.05 && dx > 0) dir = "horizontal rightward (横 héng)";
+    else if (Math.abs(dy) < 0.05 && dx < 0) dir = "horizontal leftward";
+    else if (dx < 0 && dy > 0) dir = "diagonal top-right to bottom-left (撇 piě)";
+    else if (dx > 0 && dy > 0) dir = `diagonal top-left to bottom-right (捺 nà), angle ${Math.round(angle)}°`;
+    else dir = `diagonal, angle ${Math.round(angle)}°`;
+
+    // detect direction change (折 zhé)
+    const midIdx = Math.floor(norm.length / 2);
+    const [mx, my] = norm[midIdx];
+    const d1x = mx - sx, d1y = my - sy;
+    const d2x = ex - mx, d2y = ey - my;
+    const dot = d1x * d2x + d1y * d2y;
+    const hasHook = dot < 0;
+
+    lines.push(
+      `Stroke ${i + 1}: start(${sx},${sy}) → end(${ex},${ey}), length≈${len}, direction: ${dir}${hasHook ? " with turn/hook (折/钩)" : ""}`
+    );
+  });
+
+  return lines.join("\n");
 }
 
 export function HandwritingAISection({
   strokeCount,
-  getImageBase64,
+  getStrokes,
   onCandidateClick,
 }: HandwritingAISectionProps) {
   const { isLoaded, isSignedIn } = useAuth();
@@ -40,8 +82,7 @@ export function HandwritingAISection({
   const isLimited = remaining !== null && remaining <= 0;
 
   const handleAsk = useCallback(async () => {
-    const imageBase64 = getImageBase64();
-    if (!imageBase64) return;
+    const strokeData = serializeStrokes(getStrokes());
 
     setLoading(true);
     setError("");
@@ -51,15 +92,11 @@ export function HandwritingAISection({
       const res = await fetch("/api/ai/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64 }),
+        body: JSON.stringify({ strokeData }),
       });
 
-      if (res.status === 429) {
-        setError(await res.text());
-        return;
-      }
       if (!res.ok) {
-        setError("Lỗi kết nối AI.");
+        setError(await res.text());
         return;
       }
 
@@ -68,12 +105,12 @@ export function HandwritingAISection({
 
       if (!isSignedIn) setGuestCalls((n) => n + 1);
       if (isSignedIn) getAiUsageStatus().then(setUsage);
-    } catch {
-      setError("Lỗi kết nối AI.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [getImageBase64, isSignedIn]);
+  }, [getStrokes, isSignedIn]);
 
   return (
     <div className="flex flex-col gap-2 shrink-0 border-t pt-3">

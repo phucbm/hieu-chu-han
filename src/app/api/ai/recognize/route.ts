@@ -26,14 +26,14 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   const key = process.env.GROQ_API_KEY;
-  const model = process.env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct";
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
   if (!key) {
     return new Response("AI chưa được cấu hình.", { status: 503 });
   }
 
-  const { imageBase64 } = await req.json();
-  if (!imageBase64 || typeof imageBase64 !== "string") {
+  const { strokeData } = await req.json();
+  if (!strokeData || typeof strokeData !== "string") {
     return new Response("Dữ liệu không hợp lệ.", { status: 400 });
   }
 
@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
   }
 
   const promptPath = path.join(process.cwd(), "public/prompts/char-recognize.md");
-  const prompt = await readFile(promptPath, "utf-8");
+  const template = await readFile(promptPath, "utf-8");
+  const prompt = template.replace("{{stroke_data}}", strokeData);
 
   const upstream = await fetch(GROQ_API_URL, {
     method: "POST",
@@ -95,15 +96,7 @@ export async function POST(req: NextRequest) {
       stream: false,
       temperature: 0,
       max_tokens: 64,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: imageBase64 } },
-          ],
-        },
-      ],
+      messages: [{ role: "user", content: prompt }],
     }),
   });
 

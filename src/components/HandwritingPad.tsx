@@ -23,7 +23,12 @@ const CANVAS_SIZE = 280;
 const STROKE_COLOR = "#1a1a1a";
 const LINE_WIDTH = 4;
 
-export const HandwritingPad = forwardRef<{ getImageBase64: () => string | null }, HandwritingPadProps>(function HandwritingPad({
+export interface HandwritingPadHandle {
+  getImageBase64: () => string | null;
+  getStrokes: () => number[][][];
+}
+
+export const HandwritingPad = forwardRef<HandwritingPadHandle, HandwritingPadProps>(function HandwritingPad({
   onStrokeEnd,
   onClear,
   strokeCount,
@@ -46,6 +51,7 @@ export const HandwritingPad = forwardRef<{ getImageBase64: () => string | null }
       ctx.drawImage(canvas, 0, 0);
       return offscreen.toDataURL("image/png");
     },
+    getStrokes: () => strokes.current,
   }));
 
   /** Redraws all completed strokes + the in-progress stroke onto the canvas. */
