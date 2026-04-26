@@ -8,10 +8,7 @@ export default clerkMiddleware({
 });
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and static files
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
-  ],
+  // Only run on API routes — no page is gated behind auth, so never intercept page loads.
+  // This prevents Clerk handshake failures from breaking the app for users with expired sessions.
+  matcher: ["/(api|trpc)(.*)"],
 };

@@ -37,7 +37,7 @@ export function HchNavUser() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SignInButton mode="modal">
+          <SignInButton mode="redirect">
             <SidebarMenuButton size="sm">
               <LogInIcon />
               <span>Đăng nhập</span>
@@ -45,7 +45,7 @@ export function HchNavUser() {
           </SignInButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SignUpButton mode="modal">
+          <SignUpButton mode="redirect">
             <SidebarMenuButton size="sm">
               <UserPlusIcon />
               <span>Đăng ký</span>

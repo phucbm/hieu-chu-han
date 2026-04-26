@@ -163,7 +163,7 @@ export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
           <span className="text-muted-foreground">
             Tạo tài khoản để dùng thêm {USER_DAILY_LIMIT} lượt mỗi ngày
           </span>
-          <SignUpButton mode="modal">
+          <SignUpButton mode="redirect">
             <Button variant="default" size="sm" className="text-xs h-7 ml-3 shrink-0">
               Đăng ký
             </Button>

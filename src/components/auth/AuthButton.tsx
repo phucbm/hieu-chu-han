@@ -32,13 +32,13 @@ export function AuthButton() {
 
   return (
     <div className="flex items-center gap-2">
-      <SignInButton mode="modal">
+      <SignInButton mode="redirect">
         <Button variant="ghost" size="sm" className="gap-1.5 text-sm">
           <LogIn className="h-4 w-4" />
           Đăng nhập
         </Button>
       </SignInButton>
-      <SignUpButton mode="modal">
+      <SignUpButton mode="redirect">
         <Button variant="default" size="sm" className="text-sm">
           Đăng ký
         </Button>
