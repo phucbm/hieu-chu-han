@@ -39,10 +39,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { searchWords } from "@/app/actions"
-import { HandwritingPad, type HandwritingPadHandle } from "@/components/HandwritingPad"
-import { HandwritingRecognizer, type Candidate } from "@/core/handwriting"
+import { HanziInput } from "@/components/hanzi/HanziInput"
 import { RecentSearch } from "@/components/search/RecentSearch"
-import { HandwritingAISection } from "@/components/search/HandwritingAISection"
 import type { WordEntry } from "@/core/types"
 import type { ViewedWord } from "@/hooks/useViewedWords"
 
@@ -70,16 +68,11 @@ function useIsDesktop() {
 export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }: SearchDialogProps) {
   const isDesktop = useIsDesktop()
 
-  const [mode, setMode]               = useState<SearchMode>("text")
-  const [query, setQuery]             = useState("")
-  const [results, setResults]         = useState<WordEntry[]>([])
-  const [searched, setSearched]       = useState(false)
-  const [candidates, setCandidates]   = useState<Candidate[]>([])
-  const [strokeCount, setStrokeCount] = useState(0)
-  const strokesRef  = useRef<number[][][]>([])
-  const recognizer  = useRef<HandwritingRecognizer | null>(null)
-  const inputRef    = useRef<HTMLInputElement>(null)
-  const padRef      = useRef<HandwritingPadHandle>(null)
+  const [mode, setMode]       = useState<SearchMode>("text")
+  const [query, setQuery]     = useState("")
+  const [results, setResults] = useState<WordEntry[]>([])
+  const [searched, setSearched] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Ctrl+K / Cmd+K
   useEffect(() => {
@@ -92,15 +85,6 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
     document.addEventListener("keydown", handler)
     return () => document.removeEventListener("keydown", handler)
   }, [onOpenChange])
-
-  // Handwriting recognizer lifecycle — init on open, destroy on close
-  useEffect(() => {
-    if (!open) return
-    const r = new HandwritingRecognizer()
-    r.init((c) => setCandidates(c.slice(0, 8)))
-    recognizer.current = r
-    return () => { r.destroy(); recognizer.current = null }
-  }, [open])
 
   // Auto-focus input when dialog opens in text mode
   useEffect(() => {
@@ -137,37 +121,6 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
     setQuery((prev) => prev + hanzi)
     setSearched(false)
     inputRef.current?.focus()
-  }, [])
-
-  const resetHandwriting = useCallback(() => {
-    setCandidates([])
-    setStrokeCount(0)
-    strokesRef.current = []
-  }, [])
-
-  const handleOpenChange = useCallback((v: boolean) => {
-    onOpenChange(v)
-    if (!v) resetHandwriting()
-  }, [onOpenChange, resetHandwriting])
-
-  const handleStrokeEnd = useCallback((strokes: number[][][]) => {
-    strokesRef.current = strokes
-    setStrokeCount(strokes.length)
-    recognizer.current?.lookup(strokes)
-  }, [])
-
-  const handleUndo = useCallback(() => {
-    const next = strokesRef.current.slice(0, -1)
-    strokesRef.current = next
-    setStrokeCount(next.length)
-    if (next.length > 0) recognizer.current?.lookup(next)
-    else setCandidates([])
-  }, [])
-
-  const handleClear = useCallback(() => {
-    strokesRef.current = []
-    setStrokeCount(0)
-    setCandidates([])
   }, [])
 
   const body = (
@@ -269,40 +222,12 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
             Viết tay
           </p>
 
-          <div className="w-full">
-            <HandwritingPad
-              ref={padRef}
-              onStrokeEnd={handleStrokeEnd}
-              onClear={handleClear}
-              strokeCount={strokeCount}
-              onUndo={handleUndo}
-            />
-          </div>
-
-          {candidates.length > 0 && (
-            <div className="flex flex-col gap-1.5 shrink-0">
-              <p className="text-xs text-muted-foreground">
-                Gợi ý — nhấn để thêm vào ô tìm kiếm
-              </p>
-              <div className="flex gap-1.5 flex-wrap">
-                {candidates.map((c) => (
-                  <button
-                    key={c.hanzi}
-                    onClick={() => handleCandidateClick(c.hanzi)}
-                    className="font-chinese text-xl px-2.5 py-1 rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    {c.hanzi}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/*<HandwritingAISection*/}
-          {/*  strokeCount={strokeCount}*/}
-          {/*  getStrokes={() => padRef.current?.getStrokes() ?? []}*/}
-          {/*  onCandidateClick={handleCandidateClick}*/}
-          {/*/>*/}
+          <HanziInput
+            proxyUrl="/api/handwriting"
+            onSelect={handleCandidateClick}
+            width={280}
+            height={280}
+          />
         </div>
 
       </div>
@@ -311,7 +236,7 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
 
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           className="max-w-[900px]! h-[85vh]! p-0! gap-0! flex flex-col overflow-hidden"
           showCloseButton={false}
@@ -327,7 +252,7 @@ export function SearchDialog({ open, onOpenChange, onSelect, viewedWords = [] }:
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         className="h-[85vh]! p-0! gap-0! flex flex-col overflow-hidden rounded-t-xl"
