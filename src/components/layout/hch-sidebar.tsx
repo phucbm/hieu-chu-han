@@ -19,6 +19,7 @@ import {
 import { HomeIcon, ExternalLinkIcon, MessageCircleIcon, BookMarkedIcon } from "lucide-react"
 import { getGroups } from "@/app/actions/notebook"
 import type { NotebookGroup } from "@/core/notebook-types"
+import { Skeleton } from "@/components/ui/skeleton"
 import pkg from "../../../package.json"
 
 const navSecondary = [
@@ -42,12 +43,15 @@ export function HchSidebar({ initialGroups, ...props }: HchSidebarProps) {
   const { isSignedIn, isLoaded } = useAuth()
   const pathname = usePathname()
   const [groups, setGroups] = useState<NotebookGroup[]>(initialGroups ?? [])
+  const [groupsLoading, setGroupsLoading] = useState(!initialGroups)
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      getGroups().then(setGroups).catch(() => {})
+      setGroupsLoading(true)
+      getGroups().then(setGroups).catch(() => {}).finally(() => setGroupsLoading(false))
     } else if (isLoaded) {
       setGroups([])
+      setGroupsLoading(false)
     }
   }, [isLoaded, isSignedIn])
 
@@ -64,6 +68,7 @@ export function HchSidebar({ initialGroups, ...props }: HchSidebarProps) {
       url: "/notebook",
       icon: <BookMarkedIcon />,
       isActive: pathname.startsWith("/notebook"),
+      loading: groupsLoading,
       items: groups.map((g) => ({ title: g.title, url: `/notebook/${g.slug}` })),
     },
   ]

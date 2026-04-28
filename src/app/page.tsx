@@ -1,20 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import {
-  BreadcrumbItem,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { ContentArea } from "@/components/layout/content-area";
-import { getWordEntries } from "@/app/actions";
-import { useViewedWords } from "@/hooks/useViewedWords";
-import { wordKey, type WordEntry } from "@/core/types";
+import {useCallback, useEffect, useRef, useState, useTransition} from "react";
+import {BreadcrumbItem, BreadcrumbPage,} from "@/components/ui/breadcrumb";
+import {AppLayout} from "@/components/layout/AppLayout";
+import {ContentArea} from "@/components/layout/content-area";
+import {getWordEntries} from "@/app/actions";
+import {useViewedWords} from "@/hooks/useViewedWords";
+import {type WordEntry, wordKey} from "@/core/types";
+import pkg from "../../package.json";
 
 export default function HomePage() {
   const [entries, setEntries]   = useState<WordEntry[]>([]);
   const [activeTab, setActiveTab] = useState<string | undefined>();
-  const [, startDetailTransition] = useTransition();
+  const [isWordLoading, startDetailTransition] = useTransition();
 
   // TODO: remove addViewedWord here once homepage panel no longer increments view count
   const { addViewedWord } = useViewedWords();
@@ -70,7 +68,7 @@ export default function HomePage() {
         {currentWord ? (
           <span className="font-chinese font-medium">{currentWord}</span>
         ) : (
-          "Hiểu Chữ Hán"
+            `${pkg.title}`
         )}
       </BreadcrumbPage>
     </BreadcrumbItem>
@@ -83,6 +81,7 @@ export default function HomePage() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onWordClick={openWord}
+        loading={isWordLoading}
       />
     </AppLayout>
   );

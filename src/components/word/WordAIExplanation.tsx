@@ -17,6 +17,7 @@ import { trackAiCall } from "@/core/pwa";
 import { BotMessageSquare, Check, Copy, Loader2 } from "lucide-react";
 import { MovingBorder } from "@/components/phucbm/moving-border";
 import { AiCreditBadge } from "@/components/shared/AiCreditBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function relativeTime(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -152,6 +153,15 @@ export function WordAIExplanation({ simp, trad }: WordAIExplanationProps) {
           </div>
         </div>
       </div>
+
+      {cached === undefined && (
+        <div className="flex flex-col gap-2 p-4 rounded-lg border bg-muted/40">
+          <Skeleton className="h-3.5 w-3/4" />
+          <Skeleton className="h-3.5 w-full" />
+          <Skeleton className="h-3.5 w-5/6" />
+          <Skeleton className="h-3.5 w-2/3" />
+        </div>
+      )}
 
       {status === "error" && error && (
         <p className="text-sm text-destructive">{error}</p>

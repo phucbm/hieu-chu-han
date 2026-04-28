@@ -16,6 +16,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronRightIcon } from "lucide-react"
 
 export function NavMain({
@@ -26,6 +27,7 @@ export function NavMain({
     url: string
     icon: React.ReactNode
     isActive?: boolean
+    loading?: boolean
     items?: {
       title: string
       url: string
@@ -49,26 +51,35 @@ export function NavMain({
               {item.icon}
               <span>{item.title}</span>
             </SidebarMenuButton>
-            {item.items?.length ? (
+            {(item.loading || item.items?.length) ? (
               <>
                 <CollapsibleTrigger
                   render={
                     <SidebarMenuAction className="aria-expanded:rotate-90" />
                   }
                 >
-                  <ChevronRightIcon
-                  />
+                  <ChevronRightIcon />
                   <span className="sr-only">Toggle</span>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton render={<a href={subItem.url} />}>
-                          <span>{subItem.title}</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                    {item.loading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <SidebarMenuSubItem key={i}>
+                          <div className="px-2 py-1.5">
+                            <Skeleton className="h-3.5 w-24" />
+                          </div>
+                        </SidebarMenuSubItem>
+                      ))
+                    ) : (
+                      item.items?.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton render={<a href={subItem.url} />}>
+                            <span>{subItem.title}</span>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))
+                    )}
                   </SidebarMenuSub>
                 </CollapsibleContent>
               </>

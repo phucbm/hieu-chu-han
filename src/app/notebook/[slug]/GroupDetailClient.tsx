@@ -29,6 +29,7 @@ import {
 } from "@/app/actions/notebook";
 import { getWordDetail } from "@/core/client-dictionary";
 import type { NotebookGroup, NotebookLyrics, UserWordExtended } from "@/core/notebook-types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GroupDetailClientProps {
   slug: string;
@@ -202,8 +203,26 @@ export function GroupDetailClient({ slug, initialGroups }: GroupDetailClientProp
   if (!isLoaded || loading) {
     return (
       <AppLayout breadcrumb={breadcrumb} initialGroups={initialGroups}>
-        <div className="flex items-center justify-center p-8 text-muted-foreground text-sm">
-          Đang tải...
+        <div className="flex flex-col gap-4 max-w-2xl">
+          {/* Group title + description skeleton */}
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+          {/* Word rows skeleton */}
+          <div className="rounded-lg border divide-y">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2.5">
+                <Skeleton className="h-7 w-7 rounded shrink-0" />
+                <div className="flex flex-col gap-1 flex-1">
+                  <Skeleton className="h-3.5 w-24" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+                <Skeleton className="h-3 w-10 ml-auto" />
+              </div>
+            ))}
+          </div>
         </div>
       </AppLayout>
     );

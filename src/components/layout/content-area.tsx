@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { WordTabs } from "@/components/word/WordTabs"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { WordEntry } from "@/core/types"
 
 interface ContentAreaProps {
@@ -9,9 +10,32 @@ interface ContentAreaProps {
   activeTab?: string
   onTabChange?: (tab: string) => void
   onWordClick: (simp: string) => void
+  loading?: boolean
 }
 
-export function ContentArea({ entries, activeTab, onTabChange, onWordClick }: ContentAreaProps) {
+export function ContentArea({ entries, activeTab, onTabChange, onWordClick, loading }: ContentAreaProps) {
+  if (loading && entries.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto w-full py-4 flex flex-col gap-4">
+        {/* Tab strip skeleton */}
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-20 rounded-md" />
+          <Skeleton className="h-9 w-12 rounded-md" />
+          <Skeleton className="h-9 w-12 rounded-md" />
+        </div>
+        {/* Word info box skeleton */}
+        <div className="rounded-lg border p-4 flex flex-col gap-3">
+          <Skeleton className="h-12 w-24" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-56" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        {/* Stroke animation box skeleton */}
+        <Skeleton className="h-40 w-40 rounded-lg" />
+      </div>
+    )
+  }
+
   if (entries.length === 0) {
     return (
       <div className="content-area-welcome flex flex-col items-center justify-center gap-4 py-24 text-center">
