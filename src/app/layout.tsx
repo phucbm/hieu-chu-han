@@ -1,9 +1,9 @@
-import type { Metadata, Viewport } from "next";
-import { Noto_Serif, Noto_Serif_SC } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { SwAutoUpdate } from "@/components/SwAutoUpdate";
-import { PWATracker } from "@/components/PWATracker";
-import { Toaster } from "@/components/ui/sonner";
+import type {Metadata, Viewport} from "next";
+import {Noto_Serif, Noto_Serif_SC} from "next/font/google";
+import {ClerkProvider} from "@clerk/nextjs";
+import {SwAutoUpdate} from "@/components/SwAutoUpdate";
+import {PWATracker} from "@/components/PWATracker";
+import {Toaster} from "@/components/ui/sonner";
 import pkg from "../../package.json";
 import "./globals.css";
 
@@ -32,15 +32,14 @@ const notoSerifSC = Noto_Serif_SC({
 });
 
 export const metadata: Metadata = {
-  applicationName: "Hiểu Chữ Hán",
-  title: `Hiểu Chữ Hán v${pkg.version} — Từ điển Hán Việt`,
-  description:
-    "Từ điển offline Trung - Hán Việt, phân tích chữ Hán, bộ thủ.",
+    applicationName: pkg.title,
+    title: `${pkg.title} v${pkg.version} — Từ điển Hán Việt`,
+    description: pkg.description,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hiểu Chữ Hán",
+      title: pkg.title,
   },
   icons: {
     icon: "/icon.png",

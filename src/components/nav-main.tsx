@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronRightIcon } from "lucide-react"
+import Link from "next/link"
 
 export function NavMain({
   items,
@@ -41,12 +42,12 @@ export function NavMain({
         {items.map((item) => (
           <Collapsible
             key={item.title}
-            defaultOpen={item.isActive}
+            defaultOpen={true}
             render={<SidebarMenuItem />}
           >
             <SidebarMenuButton
               tooltip={item.title}
-              render={<a href={item.url} />}
+              render={<Link href={item.url} />}
             >
               {item.icon}
               <span>{item.title}</span>
@@ -74,7 +75,7 @@ export function NavMain({
                     ) : (
                       item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton render={<a href={subItem.url} />}>
+                          <SidebarMenuSubButton render={<Link href={subItem.url} />}>
                             <span>{subItem.title}</span>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>

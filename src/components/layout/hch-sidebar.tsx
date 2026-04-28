@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HomeIcon, ExternalLinkIcon, MessageCircleIcon, BookMarkedIcon } from "lucide-react"
+import Link from "next/link"
 import { getGroups } from "@/app/actions/notebook"
 import type { NotebookGroup } from "@/core/notebook-types"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -78,7 +79,7 @@ export function HchSidebar({ initialGroups, ...props }: HchSidebarProps) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<a href="/" />}>
+            <SidebarMenuButton size="lg" render={<Link href="/" />}>
               <Image
                 src="/icon.png"
                 alt="Hiểu Chữ Hán"
