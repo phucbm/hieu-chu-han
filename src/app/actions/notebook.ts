@@ -287,9 +287,21 @@ export async function getGroupWords(groupId: string): Promise<GroupWord[]> {
 
   const filtered = rows.filter((uw) => uw.groupIds.includes(groupId));
 
-  const groupWords: GroupWord[] = [];
-  for (const uw of filtered) {
-    // HSK level from chinese-lexicon (server-side)
+  // Fetch all etymology links in one query instead of one per word
+  let etymMap = new Map<string, string[]>();
+  if (filtered.length > 0) {
+    const placeholders = filtered.map(() => "?").join(", ");
+    const etymResult = await db!.execute({
+      sql: `SELECT word, etymological_related FROM word_etymology_links WHERE word IN (${placeholders})`,
+      args: filtered.map((uw) => uw.simp),
+    });
+    for (const r of etymResult.rows) {
+      const row = r as Record<string, unknown>;
+      etymMap.set(row.word as string, parseJsonArray(row.etymological_related));
+    }
+  }
+
+  const groupWords: GroupWord[] = filtered.map((uw) => {
     let hskLevel: number | undefined;
     try {
       const entries = getEntries(uw.simp);
@@ -298,19 +310,11 @@ export async function getGroupWords(groupId: string): Promise<GroupWord[]> {
       // word not in lexicon
     }
 
-    // Etymology suggestions: related words that are also in user's user_words
-    let etymologySuggestions: string[] = [];
-    const etymLinks = await db!.execute({
-      sql: "SELECT etymological_related FROM word_etymology_links WHERE word = ?",
-      args: [uw.simp],
-    });
-    if (etymLinks.rows[0]) {
-      const related = parseJsonArray((etymLinks.rows[0] as Record<string, unknown>).etymological_related);
-      etymologySuggestions = related.filter((w) => userSimpSet.has(w) && w !== uw.simp);
-    }
+    const related = etymMap.get(uw.simp) ?? [];
+    const etymologySuggestions = related.filter((w) => userSimpSet.has(w) && w !== uw.simp);
 
-    groupWords.push({ userWord: uw, hskLevel, etymologySuggestions });
-  }
+    return { userWord: uw, hskLevel, etymologySuggestions };
+  });
 
   return groupWords;
 }

@@ -50,20 +50,16 @@ export async function upsertViewedWord(simp: string): Promise<ViewedWord | null>
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
 
-  await db!.execute({
+  const result = await db!.execute({
     sql: `
       INSERT INTO user_words (id, user_id, simp, view_count, first_viewed_at, last_viewed_at)
       VALUES (?, ?, ?, 1, ?, ?)
       ON CONFLICT(user_id, simp) DO UPDATE SET
         view_count     = view_count + 1,
         last_viewed_at = excluded.last_viewed_at
+      RETURNING *
     `,
     args: [id, userId, simp, now, now],
-  });
-
-  const result = await db!.execute({
-    sql: "SELECT * FROM user_words WHERE user_id = ? AND simp = ?",
-    args: [userId, simp],
   });
 
   return result.rows[0]
@@ -101,9 +97,8 @@ export async function mergeViewedWords(
   const { userId } = await auth();
   if (!userId || !(await ready()) || localWords.length === 0) return [];
 
-  for (const word of localWords) {
-    const id = crypto.randomUUID();
-    await db!.execute({
+  await db!.batch(
+    localWords.map((word) => ({
       sql: `
         INSERT INTO user_words (id, user_id, simp, view_count, first_viewed_at, last_viewed_at)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -113,15 +108,16 @@ export async function mergeViewedWords(
           last_viewed_at  = MAX(last_viewed_at, excluded.last_viewed_at)
       `,
       args: [
-        id,
+        crypto.randomUUID(),
         userId,
         word.simp,
         word.viewCount,
         word.firstViewedAt,
         word.lastViewedAt,
       ],
-    });
-  }
+    })),
+    "write"
+  );
 
   return getViewedWords();
 }
