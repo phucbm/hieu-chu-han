@@ -2,8 +2,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db, initSchema } from "@/lib/turso";
-import { getEntries } from "chinese-lexicon";
 import { generateSlug } from "@/lib/slugify";
+import { getServerHskLevel, getServerEtymologyData } from "@/core/server-dictionary";
 import type { NotebookGroup, NotebookLyrics, UserWordExtended, WordEtymologyLinks } from "@/core/notebook-types";
 
 let schemaReady = false;
@@ -301,20 +301,14 @@ export async function getGroupWords(groupId: string): Promise<GroupWord[]> {
     }
   }
 
-  const groupWords: GroupWord[] = filtered.map((uw) => {
-    let hskLevel: number | undefined;
-    try {
-      const entries = getEntries(uw.simp);
-      hskLevel = entries[0]?.statistics?.hskLevel ?? undefined;
-    } catch {
-      // word not in lexicon
-    }
-
-    const related = etymMap.get(uw.simp) ?? [];
-    const etymologySuggestions = related.filter((w) => userSimpSet.has(w) && w !== uw.simp);
-
-    return { userWord: uw, hskLevel, etymologySuggestions };
-  });
+  const groupWords: GroupWord[] = await Promise.all(
+    filtered.map(async (uw) => {
+      const hskLevel = await getServerHskLevel(uw.simp).catch(() => undefined);
+      const related = etymMap.get(uw.simp) ?? [];
+      const etymologySuggestions = related.filter((w) => userSimpSet.has(w) && w !== uw.simp);
+      return { userWord: uw, hskLevel, etymologySuggestions };
+    })
+  );
 
   return groupWords;
 }
@@ -348,23 +342,18 @@ export async function getOrCreateEtymologyLinks(word: string): Promise<WordEtymo
     };
   }
 
-  // Compute related words from etymology components via chinese-lexicon
+  // Compute related words from etymology components via pre-built dictionary.json
   const related: string[] = [];
   try {
-    const entries = getEntries(word);
-    for (const entry of entries) {
-      const components = entry.simpEtymology?.components ?? [];
-      for (const comp of components) {
-        if (comp.char && comp.char !== word) related.push(comp.char);
-      }
-      // Also include compound words that share characters
-      const topWords = entry.statistics?.topWords ?? [];
-      for (const tw of topWords.slice(0, 10)) {
-        if (tw.word && tw.word !== word) related.push(tw.word);
-      }
+    const { componentChars, topWords } = await getServerEtymologyData(word);
+    for (const char of componentChars) {
+      if (char !== word) related.push(char);
+    }
+    for (const tw of topWords.slice(0, 10)) {
+      if (tw !== word) related.push(tw);
     }
   } catch {
-    // word not in lexicon — store empty array
+    // dictionary unavailable — store empty array
   }
 
   const deduped = [...new Set(related)];
