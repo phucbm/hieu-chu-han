@@ -99,4 +99,4 @@ Với mỗi chữ quan trọng trong thành ngữ, phân tích thành phần xu�
 
 ## INPUT
 
-{{input}}
+- Simplified: {{simp}}{{trad_line}}
